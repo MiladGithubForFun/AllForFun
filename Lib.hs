@@ -5,6 +5,7 @@ import System.Random
 __ :: any
 __ = Prelude.error "Logical or arity value used"
 
+"see if changes applied"
 false_rect :: a1
 false_rect =
   Prelude.error "absurd case"
