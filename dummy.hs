@@ -1,7 +1,8 @@
 module Dummy where
 
 import qualified Prelude
-import Data.Ratio
+{--one comment added--}
+
 __ :: any
 __ = Prelude.error "Logical or arity value used"
 
