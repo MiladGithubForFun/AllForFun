@@ -1,6 +1,12 @@
 module Dummy where
 
+<<<<<<< HEAD
 import Data.Ratio
+=======
+import qualified Prelude
+{--one comment added--}
+
+>>>>>>> NewBranch1
 __ :: any
 __ = Prelude.error "Logical or arity value used"
 
