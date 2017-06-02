@@ -2,8 +2,6 @@ module Dummy where
 
 import qualified Prelude
 
-__ :: any
-__ = Prelude.error "Logical or arity value used"
 
 false_rect :: a1
 false_rect =
