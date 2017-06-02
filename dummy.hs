@@ -1,7 +1,11 @@
 module Dummy where
 
 import qualified Prelude
+<<<<<<< HEAD
 {--one comment added--}
+=======
+{--one comment is added now--}
+>>>>>>> f988ffcf5c26e9374f510e34494524dc8c383da1
 
 false_rect :: a1
 false_rect =
