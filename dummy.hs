@@ -1,7 +1,7 @@
 module Dummy where
 
 import qualified Prelude
-
+{--one comment added--}
 
 false_rect :: a1
 false_rect =
