@@ -10,34 +10,48 @@ val square_def = Define `
 val theorem_thm = `!n. n <= (square n)` ;
 
 datatype Cand = cand of string ;    
-
+ 
 datatype Ballot = ballot of (Cand list) * real ; 
      
-datatype judgement =   initial of ((Cand list) * int) list 
+datatype judgement =   initial of ((Cand list) * real) list 
                      | state   of 
-                                  ((Cand list) * int)
-                                * (Cand * int) list
-                                * (Cand * (((Cand list) * int) list)) list
+                                  ((Cand list) * real)
+                                * (Cand * real) list
+                                * (Cand * (((Cand list) * real) list)) list
                                 * Cand list 
                                 * Cand list
                                 * Cand list
-                                * int 
+                                * real 
                      | winners of (Cand list) ;  
-          
+           
 val Ewin = fn 
-              (initial l, (j:judgement) ) => false
-              |(winners l, (j: judgement) ) => false 
-              |( (j: judgement), initial l) => false       
-              |( (j: judgement), state s) => false
-              |( state (ba, t, p, bl, e, h, q), winners l) => 
-                 if (List.length (e @ h) <= 10) 
+              (initial l, j) => false
+              |(winners l, j) => false 
+              |(j, initial l) => false       
+              |(j, state s) => false
+              |(state (ba, t, p, bl, e, h, q), winners l) => 
+                 if (List.length (e) <= 10) 
                       then
-                        if ((e @ h) = l) 
+                        if (e = l) 
                           then true 
                           else false
-                       else false;     
+                 else false;     
+ 
+val Hwin = fn
+              (initial l, j) => false
+              |(winners l, j) => false 
+              |(j, initial l) => false       
+              |(j, state s) => false
+              |(state (ba, t, p, bl, e, h, q), winners l) => 
+                 if (List.length (e @ h) <= 10) 
+                      then
+                        if (e @ h = l) 
+                          then true 
+                          else false
+                 else false; 
 
-   
+    
+
   
 winners [cand "me"];  
 
