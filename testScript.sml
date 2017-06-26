@@ -3,24 +3,42 @@ open stringLib
 open pairTheory;
      
 val _ = new_theory "test" ;
+   
+val square_def = Define `
+ !n. (square n = n * n) `; 
+             
+val theorem_thm = `!n. n <= (square n)` ;
 
 datatype Cand = cand of string ;    
 
 datatype Ballot = ballot of (Cand list) * real ; 
-    
-datatype judgement =   initial of ((Cand list) * real) list 
+     
+datatype judgement =   initial of ((Cand list) * int) list 
                      | state   of 
-                                  ((Cand list) * real)
-                                * (Cand * real) list
-                                * (Cand * (((Cand list) * real) list)) list 
+                                  ((Cand list) * int)
+                                * (Cand * int) list
+                                * (Cand * (((Cand list) * int) list)) list
                                 * Cand list 
                                 * Cand list
                                 * Cand list
-                                * real 
+                                * int 
                      | winners of (Cand list) ;  
+          
+val Ewin = fn 
+              (initial l, (j:judgement) ) => false
+              |(winners l, (j: judgement) ) => false 
+              |( (j: judgement), initial l) => false       
+              |( (j: judgement), state s) => false
+              |( state (ba, t, p, bl, e, h, q), winners l) => 
+                 if (List.length (e @ h) <= 10) 
+                      then
+                        if ((e @ h) = l) 
+                          then true 
+                          else false
+                       else false;     
 
- 
- 
+   
+  
 winners [cand "me"];  
 
 datatype Nat = zero | Succ of Nat | Pred of Nat ; 
