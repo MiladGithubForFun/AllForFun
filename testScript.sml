@@ -28,7 +28,8 @@ val sum_aux_def = Define ` ((sum_aux []) = 0) /\
                           ( (sum_aux (h::t)) = ((SND h) + (sum_aux t)) )  `;
 
 
-(*the boolian function for deciding on ewin correct application*)                       val Ewin_def = Define `
+(*the boolian function for deciding on ewin correct application*) 
+val Ewin_def = Define `
                   ((Ewin ((winners l), (j : judgement))) = F) 
                /\ ((Ewin ((j: judgement), state (ba, t, p, bl, e, h))) = F)    
                /\ (Ewin (state (ba, t, p, bl, e, h), winners l) =  
