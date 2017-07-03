@@ -36,28 +36,45 @@ val prime_def =
         
 (*the boolian function for deciding on ewin correct application*)    
 val Ewin_def = Define `
-           (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
-        /\ ((Ewin qu st ((j: judgement), state (ba, t, p, bl, e, h))) = F)                  /\ (Ewin qu st (state (ba, t, p, bl, e, h), winners l) =  
-                  ( if ( (e =l) /\ (LENGTH e = st)) then T else F))`;
-        
+        (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
+        /\ (Ewin qu st (state p, state p') = F)                
+        /\ (Ewin qu st (state (ba, t, p, bl, e, h), winners l) =  
+                       ( if ( (e =l) /\ (LENGTH e = st)) then T else F))`;
+          
 val ewin_def = Define ` ewin (qu: rat) st j1 j2 = ? u t p bl e h w.
                (j1 = state (u, t, p, bl, e, h))                 
                /\ (j2 = winners w) 
                /\ (e = w)
                /\ ((LENGTH e) = st)`;
-            
+             
 val ewin_to_Ewin_thm = Q.store_thm ("ewin_to_Ewin",
  `!qu st j1 j2. (ewin qu st j1 j2) ==> (Ewin qu st (j1, j2) = T) `, 
    STRIP_TAC 
-   >> STRIP_TAC 
-   >> Cases_on `j1`
-   >> STRIP_TAC 
-   >> Cases_on `j2` 
-   >> rw[ewin_def] 
-   >> rw[ewin_def, Ewin_def, ewin_def]) ;  
- 
-`!qu st j1 j2. (Ewin qu st (j1, j2) = T) ==> (ewin qu st j1 j2) `;
+     >> STRIP_TAC 
+       >> Cases_on `j1`
+         >> STRIP_TAC 
+           >> Cases_on `j2` 
+             >> rw[ewin_def] 
+               >> rw[ewin_def, Ewin_def, ewin_def]) ;     
 
+
+val Ewin_to_ewin = Q.store_thm ("Ewin_to_ewin", 
+ `!qu st j1 j2. (Ewin qu st (j1, j2) = T) ==> (ewin qu st j1 j2) `, 
+    STRIP_TAC 
+    >> STRIP_TAC 
+      >> Cases_on `j1` 
+        >> Cases_on `j2` 
+    >- rw[Ewin_def] 
+    >- (Cases_on `p` 
+      >> Cases_on `r` 
+        >> Cases_on `r'` 
+          >> Cases_on `r` 
+            >> Cases_on `r'` 
+              >> rw[Ewin_def] 
+                >> rw[ewin_def]) 
+    >- rw[Ewin_def] 
+    >-  rw[Ewin_def])  ;       
+ 
 (*to be turned into a HOL function*)       
  val Hwin = fn
                 (initial l, j) => false
