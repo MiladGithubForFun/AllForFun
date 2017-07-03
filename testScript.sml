@@ -8,7 +8,7 @@ open bossLib
 open fracTheory 
 open listLib
 ;
-   
+    
      
 val _ = new_theory "test" ; 
 
@@ -36,8 +36,8 @@ val prime_def =
         
 (*the boolian function for deciding on ewin correct application*)    
 val Ewin_def = Define `
-        (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
-        /\ ((Ewin qu st ((j: judgement), state (ba, t, p, bl, e, h))) = F)            /\ (Ewin qu st (state (ba, t, p, bl, e, h), winners l) =  
+           (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
+        /\ ((Ewin qu st ((j: judgement), state (ba, t, p, bl, e, h))) = F)                  /\ (Ewin qu st (state (ba, t, p, bl, e, h), winners l) =  
                   ( if ( (e =l) /\ (LENGTH e = st)) then T else F))`;
         
 val ewin_def = Define ` ewin (qu: rat) st j1 j2 = ? u t p bl e h w.
@@ -45,8 +45,10 @@ val ewin_def = Define ` ewin (qu: rat) st j1 j2 = ? u t p bl e h w.
                /\ (j2 = winners w) 
                /\ (e = w)
                /\ ((LENGTH e) = st)`;
-        
-val Ewin_ewin_OK_thm = Define `Ewin_ewin_OK =  ((ewin qu st j1 j2) <==> (Ewin qu st j1 j2 = T))`;
+           
+`!qu st j1 j2. (ewin qu st j1 j2) ==> (Ewin qu st (j1, j2) = T) `; 
+
+`!qu st j1 j2. (Ewin qu st (j1, j2) = T) ==> (ewin qu st j1 j2) `;
 
 (*to be turned into a HOL function*)       
  val Hwin = fn
