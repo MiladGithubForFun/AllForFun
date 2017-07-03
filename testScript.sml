@@ -26,13 +26,7 @@ val _ = Hol_datatype `judgement =
                                                       
 val sum_aux_def = Define ` ((sum_aux []) = 0) /\
                           ( (sum_aux (h::t)) = ((SND h) + (sum_aux t)) )  `;
-                 
-val divides_def = Define `divides a b = ?x. b = a * x`;
-               
-val prime_def =
- Define `prime p = p <> 1 /\
-  (!x. divides x p ==> (x=1) \/ (x=p))`;
-  
+                  
         
 (*the boolian function for deciding on ewin correct application*)    
 val Ewin_def = Define `
@@ -74,6 +68,40 @@ val Ewin_to_ewin = Q.store_thm ("Ewin_to_ewin",
                 >> rw[ewin_def]) 
     >- rw[Ewin_def] 
     >-  rw[Ewin_def])  ;       
+       
+val Hwin_def = Define `
+        (Hwin (qu : rat) st (winners l, (j : judgement)) = F) 
+        /\ (Hwin qu st (state p, state p') = F)                
+        /\ (Hwin qu st (state (ba, t, p, bl, e, h), winners l) =  
+            ( if ( ((e ++ h) = l) /\ ((LENGTH (e ++ h)) <= st)) then T else F))`; 
+  
+val hwin_def = Define ` hwin (qu: rat) st j1 j2 = ? u t p bl e h w.
+               (j1 = state (u, t, p, bl, e, h))                 
+               /\ (j2 = winners w) 
+               /\ ((e ++ h) = w)
+               /\ ((LENGTH (e ++ h)) <= st)`;
+   
+val hwin_to_Hwin = Q.store_thm ("hwin_to_Hwin",
+  `!qu st j1 j2. (hwin qu st j1 j2) ==> (Hwin qu st (j1, j2) = T)`,
+   STRIP_TAC >> STRIP_TAC >> Cases_on `j1` 
+   >- (rw[hwin_def]
+    >> rw[Hwin_def])
+   >- rw[hwin_def]); 
+     
+val Hwin_to_hwin = Q.store_thm ("Hwin_to_hwin", 
+  `!qu st j1 j2. (Hwin qu st (j1, j2) = T) ==> (hwin qu st j1 j2)`,
+   STRIP_TAC >> STRIP_TAC >> Cases_on `j1` >> Cases_on `j2`  
+   >- rw[Hwin_def]
+   >- (Cases_on `p` 
+     >> Cases_on `r` 
+       >> Cases_on `r'` 
+         >> Cases_on `r` 
+           >> Cases_on `r'`
+             >> rw[Hwin_def] 
+               >> rw[hwin_def]) 
+   >- rw[Hwin_def] 
+   >- rw[Hwin_def]); 
+ 
  
 (*to be turned into a HOL function*)       
  val Hwin = fn
