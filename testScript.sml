@@ -8,7 +8,7 @@ open bossLib
 open fracTheory 
 open listLib
 ;
-    
+     
      
 val _ = new_theory "test" ; 
 
@@ -45,9 +45,17 @@ val ewin_def = Define ` ewin (qu: rat) st j1 j2 = ? u t p bl e h w.
                /\ (j2 = winners w) 
                /\ (e = w)
                /\ ((LENGTH e) = st)`;
-           
-`!qu st j1 j2. (ewin qu st j1 j2) ==> (Ewin qu st (j1, j2) = T) `; 
-
+            
+val ewin_to_Ewin_thm = Q.store_thm ("ewin_to_Ewin",
+ `!qu st j1 j2. (ewin qu st j1 j2) ==> (Ewin qu st (j1, j2) = T) `, 
+   STRIP_TAC 
+   >> STRIP_TAC 
+   >> Cases_on `j1`
+   >> STRIP_TAC 
+   >> Cases_on `j2` 
+   >> rw[ewin_def] 
+   >> rw[ewin_def, Ewin_def, ewin_def]) ;  
+ 
 `!qu st j1 j2. (Ewin qu st (j1, j2) = T) ==> (ewin qu st j1 j2) `;
 
 (*to be turned into a HOL function*)       
