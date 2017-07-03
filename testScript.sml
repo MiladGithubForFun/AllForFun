@@ -8,7 +8,7 @@ open bossLib
 open fracTheory 
 open listLib
 ;
-  
+   
      
 val _ = new_theory "test" ; 
 
@@ -23,18 +23,31 @@ val _ = Hol_datatype `judgement =
                                   # Cand list
                                   # Cand list 
                                | winners of (Cand list) `;  
-                                                     
+                                                      
 val sum_aux_def = Define ` ((sum_aux []) = 0) /\
                           ( (sum_aux (h::t)) = ((SND h) + (sum_aux t)) )  `;
-
-
-(*the boolian function for deciding on ewin correct application*) 
+                 
+val divides_def = Define `divides a b = ?x. b = a * x`;
+               
+val prime_def =
+ Define `prime p = p <> 1 /\
+  (!x. divides x p ==> (x=1) \/ (x=p))`;
+  
+        
+(*the boolian function for deciding on ewin correct application*)    
 val Ewin_def = Define `
-                  ((Ewin ((winners l), (j : judgement))) = F) 
-               /\ ((Ewin ((j: judgement), state (ba, t, p, bl, e, h))) = F)    
-               /\ (Ewin (state (ba, t, p, bl, e, h), winners l) =  
-                  ( if ( (e =l) /\ (LENGTH e <= 10)) then T else F))`;
- 
+        (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
+        /\ ((Ewin qu st ((j: judgement), state (ba, t, p, bl, e, h))) = F)            /\ (Ewin qu st (state (ba, t, p, bl, e, h), winners l) =  
+                  ( if ( (e =l) /\ (LENGTH e = st)) then T else F))`;
+        
+val ewin_def = Define ` ewin (qu: rat) st j1 j2 = ? u t p bl e h w.
+               (j1 = state (u, t, p, bl, e, h))                 
+               /\ (j2 = winners w) 
+               /\ (e = w)
+               /\ ((LENGTH e) = st)`;
+        
+val Ewin_ewin_OK_thm = Define `Ewin_ewin_OK =  ((ewin qu st j1 j2) <==> (Ewin qu st j1 j2 = T))`;
+
 (*to be turned into a HOL function*)       
  val Hwin = fn
                 (initial l, j) => false
