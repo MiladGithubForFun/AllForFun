@@ -9,7 +9,7 @@ open fracTheory
 open listLib
 ;
      
-     
+      
 val _ = new_theory "test" ; 
 
 val _ = Hol_datatype ` Cand = cand of string ` ; 
@@ -83,9 +83,11 @@ val hwin_def = Define ` hwin (qu: rat) st j1 j2 = ? u t p bl e h w.
    
 val hwin_to_Hwin = Q.store_thm ("hwin_to_Hwin",
   `!qu st j1 j2. (hwin qu st j1 j2) ==> (Hwin qu st (j1, j2) = T)`,
-   STRIP_TAC >> STRIP_TAC >> Cases_on `j1` 
+   STRIP_TAC 
+        >> STRIP_TAC 
+          >> Cases_on `j1` 
    >- (rw[hwin_def]
-    >> rw[Hwin_def])
+     >> rw[Hwin_def])
    >- rw[hwin_def]); 
      
 val Hwin_to_hwin = Q.store_thm ("Hwin_to_hwin", 
@@ -102,7 +104,40 @@ val Hwin_to_hwin = Q.store_thm ("Hwin_to_hwin",
    >- rw[Hwin_def] 
    >- rw[Hwin_def]); 
  
- 
+val eqe_def = Define `
+       ((eqe (c: Cand) l nl ) = ?l1 l2. 
+                                 (l = l1 ++ l2)
+                                 /\ (nl = l1 ++ [c] ++ l2)
+                                 /\ (~ (MEM c l1)) 
+                                 /\ (~ (MEM c l2))) `;
+  
+val get_cand_tally_def = Define `
+            (get_cand_tally (c : Cand) [] = (~ 1))
+            /\ (get_cand_tally c (h ::t) = (if  (c = FST h) then SND h
+                                            else (get_cand_tally c t))) `;
+  
+val get_cand_pile_def = Define `
+     (get_cand_pile (c : Cand) ([] : (Cand # (((Cand list) # rat) list)) list) = [])
+     /\ (get_cand_pile c (h ::t) = (if (c = FST h) then SND h
+                                     else get_cand_pile c t)) `;
+
+val empty_cand_pile_def = Define `
+   (empty_cand_pile (c : Cand) ([] : (Cand # (((Cand list) # rat) list)) list) = [])
+   /\ (empty_cand_pile c (h ::t) = (if (c = FST h) then ((c, []) :: t)
+                                    else h :: (empty_cand_pile c t))) `;
+
+
+val elim_def = Define ` (elim (qu : rat) (st :int) j1 j2) = ?nba t p np e h nh.
+    (j1 = state ([], t, p, [], e, h)
+    /\ (LENGTH (e ++ h) > st)
+    /\ (!c. (MEM c h ==> (get_cand_tally c t) < qu))
+    /\ (?c'. (!d. (MEM d h ==> (get_cand_tally c' t) <= (get_cand_tally d t)))
+      /\ (eqe c' nh h)
+      /\ (nba = get_cand_pile c' p)
+      /\ (np (c') = empty_cand_pile c' p)
+      /\ (!d'. ((d <> c) ==> 
+
+
 (*to be turned into a HOL function*)       
  val Hwin = fn
                 (initial l, j) => false
