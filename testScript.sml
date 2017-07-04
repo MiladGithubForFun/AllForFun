@@ -33,7 +33,7 @@ val Ewin_def = Define `
         (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
         /\ (Ewin qu st (state p, state p') = F)                
         /\ (Ewin qu st (state (ba, t, p, bl, e, h), winners l) =  
-                       ( if ( (e =l) /\ (LENGTH e = st)) then T else F))`;
+                       ( (e =l) /\ (LENGTH e = st)))`;
           
 val ewin_def = Define ` ewin (qu: rat) st j1 j2 = ? u t p bl e h w.
                (j1 = state (u, t, p, bl, e, h))                 
@@ -51,7 +51,7 @@ val ewin_to_Ewin_thm = Q.store_thm ("ewin_to_Ewin",
              >> rw[ewin_def] 
                >> rw[ewin_def, Ewin_def, ewin_def]) ;     
 
-
+ 
 val Ewin_to_ewin = Q.store_thm ("Ewin_to_ewin", 
  `!qu st j1 j2. (Ewin qu st (j1, j2) = T) ==> (ewin qu st j1 j2) `, 
     STRIP_TAC 
@@ -68,19 +68,19 @@ val Ewin_to_ewin = Q.store_thm ("Ewin_to_ewin",
                 >> rw[ewin_def]) 
     >- rw[Ewin_def] 
     >-  rw[Ewin_def])  ;       
-       
+        
 val Hwin_def = Define `
         (Hwin (qu : rat) st (winners l, (j : judgement)) = F) 
         /\ (Hwin qu st (state p, state p') = F)                
         /\ (Hwin qu st (state (ba, t, p, bl, e, h), winners l) =  
-            ( if ( ((e ++ h) = l) /\ ((LENGTH (e ++ h)) <= st)) then T else F))`; 
-  
+            ((e ++ h) = l) /\ ((LENGTH (e ++ h)) <= st))`; 
+   
 val hwin_def = Define ` hwin (qu: rat) st j1 j2 = ? u t p bl e h w.
                (j1 = state (u, t, p, bl, e, h))                 
                /\ (j2 = winners w) 
                /\ ((e ++ h) = w)
                /\ ((LENGTH (e ++ h)) <= st)`;
-   
+    
 val hwin_to_Hwin = Q.store_thm ("hwin_to_Hwin",
   `!qu st j1 j2. (hwin qu st j1 j2) ==> (Hwin qu st (j1, j2) = T)`,
    STRIP_TAC 
@@ -89,28 +89,31 @@ val hwin_to_Hwin = Q.store_thm ("hwin_to_Hwin",
    >- (rw[hwin_def]
      >> rw[Hwin_def])
    >- rw[hwin_def]); 
-     
+      
 val Hwin_to_hwin = Q.store_thm ("Hwin_to_hwin", 
   `!qu st j1 j2. (Hwin qu st (j1, j2) = T) ==> (hwin qu st j1 j2)`,
-   STRIP_TAC >> STRIP_TAC >> Cases_on `j1` >> Cases_on `j2`  
+   STRIP_TAC
+        >> STRIP_TAC
+	  >> Cases_on `j1`
+	    >> Cases_on `j2`  
    >- rw[Hwin_def]
    >- (Cases_on `p` 
-     >> Cases_on `r` 
-       >> Cases_on `r'` 
-         >> Cases_on `r` 
-           >> Cases_on `r'`
-             >> rw[Hwin_def] 
-               >> rw[hwin_def]) 
+      >> Cases_on `r` 
+        >> Cases_on `r'` 
+          >> Cases_on `r` 
+            >> Cases_on `r'`
+              >> rw[Hwin_def] 
+                >> rw[hwin_def]) 
    >- rw[Hwin_def] 
    >- rw[Hwin_def]); 
- 
+  
 val eqe_def = Define `
        ((eqe (c: Cand) l nl ) = ?l1 l2. 
                                  (l = l1 ++ l2)
                                  /\ (nl = l1 ++ [c] ++ l2)
                                  /\ (~ (MEM c l1)) 
                                  /\ (~ (MEM c l2))) `;
-  
+   
 val get_cand_tally_def = Define `
             (get_cand_tally (c : Cand) [] = (~ 1))
             /\ (get_cand_tally c (h ::t) = (if  (c = FST h) then SND h
@@ -120,22 +123,22 @@ val get_cand_pile_def = Define `
      (get_cand_pile (c : Cand) ([] : (Cand # (((Cand list) # rat) list)) list) = [])
      /\ (get_cand_pile c (h ::t) = (if (c = FST h) then SND h
                                      else get_cand_pile c t)) `;
-
+ 
 val empty_cand_pile_def = Define `
    (empty_cand_pile (c : Cand) ([] : (Cand # (((Cand list) # rat) list)) list) = [])
    /\ (empty_cand_pile c (h ::t) = (if (c = FST h) then ((c, []) :: t)
                                     else h :: (empty_cand_pile c t))) `;
-
-
-val elim_def = Define ` (elim (qu : rat) (st :int) j1 j2) = ?nba t p np e h nh.
-    (j1 = state ([], t, p, [], e, h)
+  
+                
+val elim_def = Define ` (elim (qu : rat) st j1 j2) = (?t p e h nh nba np.
+    (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st)
-    /\ (!c. (MEM c h ==> (get_cand_tally c t) < qu))
-    /\ (?c'. (!d. (MEM d h ==> (get_cand_tally c' t) <= (get_cand_tally d t)))
+    /\ (!c. (MEM c h ==> (!x. MEM (c,x) t ==> ( x < qu))))  
+    /\ (?c'. (!d. (MEM d h ==> (!x y. (MEM (c',x) t) /\ (MEM (d,y) t) ==> ( x <= y))))
       /\ (eqe c' nh h)
       /\ (nba = get_cand_pile c' p)
-      /\ (np (c') = empty_cand_pile c' p)
-      /\ (!d'. ((d <> c) ==> 
+      /\ (np  = empty_cand_pile c' p)
+      /\ (!d'. ((d' <> c') ==> (!l l'. (MEM (d',l) p) /\ (MEM (d',l') np) ==> (l = l')))))) `; 
 
 
 (*to be turned into a HOL function*)       
