@@ -8,7 +8,7 @@ open bossLib
 open fracTheory 
 open listLib
 ;
-     
+      
       
 val _ = new_theory "test" ; 
 
@@ -118,7 +118,7 @@ val get_cand_tally_def = Define `
             (get_cand_tally (c : Cand) [] = (~ 1))
             /\ (get_cand_tally c (h ::t) = (if  (c = FST h) then SND h
                                             else (get_cand_tally c t))) `;
-  
+   
 val get_cand_pile_def = Define `
      (get_cand_pile (c : Cand) ([] : (Cand # (((Cand list) # rat) list)) list) = [])
      /\ (get_cand_pile c (h ::t) = (if (c = FST h) then SND h
@@ -129,33 +129,66 @@ val empty_cand_pile_def = Define `
    /\ (empty_cand_pile c (h ::t) = (if (c = FST h) then ((c, []) :: t)
                                     else h :: (empty_cand_pile c t))) `;
 
+         
 val elim_def = Define ` (elim (qu : rat) st j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st)
     /\ (!c. (MEM c h ==> (!x. MEM (c,x) t ==> ( x < qu))))  
-    /\ (?c'. (!d. (MEM d h ==> (!x y. (MEM (c',x) t) /\ (MEM (d,y) t) ==> ( x <= y))))
-      /\ (eqe c' nh h)
+    /\ (?c'. (MEM c' h) 
+          /\ (!d. (MEM d h ==> (!x y. (MEM (c',x) t) /\ (MEM (d,y) t) ==> ( x <= y))))
+      /\ (?l1 l2. (nh = l1 ++l2) /\ (h = l1 ++ [c']++ l2) /\ ~ (MEM c' l1) /\ ~(MEM c' l2))
       /\ (nba = get_cand_pile c' p)
-      /\ (np  = empty_cand_pile c' p)
-      /\ (!d'. ((d' <> c') ==> (!l l'. (MEM (d',l) p) /\ (MEM (d',l') np) ==> (l = l')))))) `; 
-      
+      /\ ( MEM (c',[]) np)
+      /\ (!d'. ((d' <> c') ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
+                                 /\ (MEM (d',l) np ==> MEM (d',l) p))))
+      /\ (j2 = state (nba, t, np, [], e, nh)))) `; 
+             
 
-(*to be turned into a HOL function*)       
- val Hwin = fn
-                (initial l, j) => false
-              | (winners l, j) => false 
-              | (j, initial l) => false       
-              | (j, state s) => false
-              | (state (ba, t, p, bl, e, h, q), winners l) => 
-                  if (List.length (e @ h) <= 10) 
-                      then
-                        if (e @ h = l) 
-                          then true 
-                        else false
-                  else false; 
-  
-val non_empty = Define `   (non_empty [] = F)
-                        /\ (non_empty (h::t) = T) `;
+val less_than_quota_def = Define `
+                 (less_than_quota qu [] l = T)
+              /\ (less_than_quota qu (h ::tl ) l = (if (get_cand_tally h l < qu) 
+                                                         then less_than_quota qu tl l
+                                                    else F)) `; 
+
+(*to find the weakest candidate in a non-empty list of continuing candidates*)   
+val find_weakest_cand_def = Define `
+           (find_weakest_cand [h] l = h)
+        /\ (find_weakest_cand (h::h'::tl) l = (if (get_cand_tally h l < get_cand_tally h' l)
+                                                      then find_weakest_cand (h::tl) l                                                         else find_weakest_cand (h'::tl) l)) `;
+
+ 
+(*checks if c is the weakest w.r.t. all the other continuing candidates*)
+val is_weakest_cand_def = Define `
+             (is_weakest_cand (c: Cand) [] l = T)
+          /\ (is_weakest_cand (c: Cand) (h::t) l = (if (get_cand_tally c l < get_cand_tally c l)
+                                                        then is_weakest_cand c t l
+                                                    else F)) `;
+
+ 
+val non_empty = Define ` (non_empty [] = F)
+                      /\ (non_empty _ = T) `;
+ 
+
+val empty_list_def = Define `
+                         (empty_list [] = T)
+                      /\ (empty_list _ = F) `;
+ 
+        
+val Elim_def = Define `
+             (Elim st (qu : rat) ((j: judgement), winners w) = F)
+          /\ (Elim st qu (winners w, (j: judgement)) = F) 
+          /\ (Elim st qu (state (ba, t, p, bl, e, h), state (ba', t', p', bl', e',h')) =
+                  ((empty_list ba) 
+               /\ (empty_list bl) 
+               /\ (empty_list bl')
+               /\ (LENGTH (e ++ h) > st) 
+               /\ (less_than_quota qu h t)
+               /\ (is_weakest_cand (find_weakest_cand h t) h t)
+               /\ (eqe (find_weakest_cand h t) h' h)
+               /\ (ba' = get_cand_pile (find_weakest_cand h t) p)
+               /\ (p' = empty_cand_pile (find_weakest_cand h t) p) )) `;
+                   
+
    
 val not_elem = Define `   (not_elem a [] = T)
                        /\ (not_elem a (h::t) = (if (a = h) then F
