@@ -9,7 +9,7 @@ open fracTheory
 open listLib
 ;
       
-      
+       
 val _ = new_theory "test" ; 
 
 val _ = Hol_datatype ` Cand = cand of string ` ; 
@@ -130,7 +130,7 @@ val empty_cand_pile_def = Define `
                                     else h :: (empty_cand_pile c t))) `;
 
          
-val elim_def = Define ` (elim (qu : rat) st j1 j2) = (?t p e h nh nba np.
+val elim_def = Define ` (elim st (qu :rat) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st)
     /\ (!c. (MEM c h ==> (!x. MEM (c,x) t ==> ( x < qu))))  
@@ -142,7 +142,7 @@ val elim_def = Define ` (elim (qu : rat) st j1 j2) = (?t p e h nh nba np.
       /\ (!d'. ((d' <> c') ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
                                  /\ (MEM (d',l) np ==> MEM (d',l) p))))
       /\ (j2 = state (nba, t, np, [], e, nh)))) `; 
-             
+              
 
 val less_than_quota_def = Define `
                  (less_than_quota qu [] l = T)
@@ -153,9 +153,9 @@ val less_than_quota_def = Define `
 (*to find the weakest candidate in a non-empty list of continuing candidates*)   
 val find_weakest_cand_def = Define `
            (find_weakest_cand [h] l = h)
-        /\ (find_weakest_cand (h::h'::tl) l = (if (get_cand_tally h l < get_cand_tally h' l)
+        /\ (find_weakest_cand (h::h'::tl) l = (if (get_cand_tally h l <= get_cand_tally h' l)
                                                       then find_weakest_cand (h::tl) l                                                         else find_weakest_cand (h'::tl) l)) `;
-
+ 
  
 (*checks if c is the weakest w.r.t. all the other continuing candidates*)
 val is_weakest_cand_def = Define `
@@ -164,7 +164,11 @@ val is_weakest_cand_def = Define `
                                                         then is_weakest_cand c t l
                                                     else F)) `;
 
- 
+val remove_one_cand_def = Define `
+                         (remove_one_cand (c :Cand) [] = [])
+                      /\ (remove_one_cand c (h::t) = (if c = h then t 
+                                                      else remove_one_cand c t)) `;
+  
 val non_empty = Define ` (non_empty [] = F)
                       /\ (non_empty _ = T) `;
  
@@ -173,7 +177,15 @@ val empty_list_def = Define `
                          (empty_list [] = T)
                       /\ (empty_list _ = F) `;
  
-        
+
+`!h t. (h <> [] ==> (MEM (find_weakest_cand h t) h)) `
+
+Induct_on `h` 
+ASM_SIMP_TAC bool_ss []
+
+
+  
+         
 val Elim_def = Define `
              (Elim st (qu : rat) ((j: judgement), winners w) = F)
           /\ (Elim st qu (winners w, (j: judgement)) = F) 
@@ -183,11 +195,23 @@ val Elim_def = Define `
                /\ (empty_list bl')
                /\ (LENGTH (e ++ h) > st) 
                /\ (less_than_quota qu h t)
+               /\ (h' = remove_one_cand (find_weakest_cand h t) h)
                /\ (is_weakest_cand (find_weakest_cand h t) h t)
                /\ (eqe (find_weakest_cand h t) h' h)
                /\ (ba' = get_cand_pile (find_weakest_cand h t) p)
                /\ (p' = empty_cand_pile (find_weakest_cand h t) p) )) `;
-                   
+              
+`!st qu j1 j2. (Elim st qu (j1,j2) = T) ==> (elim st qu j1 j2) `
+STRIP_TAC STRIP_TAC 
+Cases_on `j1` Cases_on `j2`  Cases_on `p` Cases_on `r` Cases_on `r'` Cases_on `r` 
+Cases_on `r'` Cases_on `p'` Cases_on `r'` Cases_on `r''` Cases_on `r'` Cases_on `r''` 
+rw[Elim_def] rw[elim_def] 
+ 
+
+
+
+`!st qu j1 j2. ((elim st qu j1 j2) ==> (Elim st qu (j1, j2) = T))`                   
+
 
    
 val not_elem = Define `   (not_elem a [] = T)
@@ -204,20 +228,5 @@ val rec Filter = fn  [] => []
                                     then (h :: Filter t)
                                   else Filter t
                                else Filter t ; 
- 
-(*the following is extra now *)
-val Start = fn
-                (state s, j) => false
-              | (winners l, j) => false 
-              | (j, initial l) => false       
-              | (j, winners l) => false
-              | (initial l, state (ba, t, p , bl, e, h, q)) => 
-                  if ((ba = Filter l); 
-                     (non_empty t); 
-                     (non_empty bl); 
-                     (non_empty e)) 
-                                  then true
-                  else false ;
- 
                             
                        
