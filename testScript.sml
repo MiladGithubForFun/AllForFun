@@ -8,7 +8,7 @@ open bossLib
 open fracTheory 
 open listLib
 ;   
-         
+          
         
 val _ = new_theory "test" ; 
 
@@ -129,14 +129,14 @@ val empty_cand_pile_def = Define `
    /\ (empty_cand_pile c (h ::t) = (if (c = FST h) then ((c, []) :: t)
                                     else h :: (empty_cand_pile c t))) `;
 
-         
+          
 val elim_def = Define ` (elim st (qu :rat) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st) 
     /\ (LENGTH e < st)
-    /\ (!c. (MEM c h ==> (!x. MEM (c,x) t ==> ( x < qu))))  
+    /\ (!c. (MEM c h ==> (?x. MEM (c,x) t /\ ( x < qu))))  
     /\ (?c'. (MEM c' h) 
-          /\ (!d. (MEM d h ==> (!x y. (MEM (c',x) t) /\ (MEM (d,y) t) ==> ( x <= y))))
+          /\ (!d. (MEM d h ==> (?x y. (MEM (c',x) t) /\ (MEM (d,y) t) /\ ( x <= y))))
       /\ (?l1 l2. (nh = l1 ++l2) /\ (h = l1 ++ [c']++ l2) /\ ~ (MEM c' l1) /\ ~(MEM c' l2))
       /\ (nba = get_cand_pile c' p)
       /\ ( MEM (c',[]) np)
@@ -202,15 +202,18 @@ val APPEND_MID_NOT_NIL = Q.store_thm ("APPEND_MID_NOT_NIL",
             >> rw[APPEND]) ;  
     
 
+
+ 
 `!c h h'. (?l1 l2. (h = l1++l2) 
                 /\ (h' = l1++([c]++l2)) 
                 /\ ~(MEM c l1) 
                 /\ ~(MEM c l2)) ==> (h = remove_one_cand c h')`
 
-STRIP_TAC Induct_on `h'`  
->- rw[APPEND_MID_NOT_NIL]
-
-STRIP_TAC STRIP_TAC   
+STRIP_TAC Induct_on `h'` 
+   
+>- rw[APPEND_MID_NOT_NIL] 
+ 
+STRIP_TAC SPEC_TAC(h'', (!h   
      
 
  
@@ -224,24 +227,22 @@ ASM_SIMP_TAC bool_ss []
 
 
     
-          
+           
 val Elim_def = Define `
              (Elim st (qu : rat) ((j: judgement), winners w) = F)
           /\ (Elim st qu (winners w, (j: judgement)) = F) 
-          /\ (Elim st qu (state (ba, t, p, bl, e, h), state (ba', t', p', bl', e',h')) = (?c.
+          /\ (Elim st qu (state (ba, t, p, bl, e, h), state (ba', t', p', bl', e',h')) = 
                   ((empty_list ba) 
                /\ (empty_list bl) 
                /\ (t = t') /\ (bl = bl') /\ (e = e')
                /\ (LENGTH (e ++ h) > st) /\ (LENGTH e < st)
-               /\ (MEM c h)
+               /\ (MEM (find_weakest_cand h t) h)
                /\ (less_than_quota qu h t)
-               /\ (c = find_weakest_cand h t)
-               /\ (h' = remove_one_cand c h)
-               /\ (is_weakest_cand c h t)
-               /\ (eqe c h' h)
-               /\ (ba' = get_cand_pile c p)
-               /\ (p' = empty_cand_pile c p) ))) `;
-                 
+               /\ (h' = remove_one_cand (find_weakest_cand h t) h)
+               /\ (is_weakest_cand (find_weakest_cand h t) h t)
+               /\ (ba' = get_cand_pile (find_weakest_cand h t) p)
+               /\ (p' = empty_cand_pile (find_weakest_cand h t) p) )) `;
+                  
 `!st qu j1 j2. (Elim st qu (j1,j2) = T) ==> (elim st qu j1 j2) `
 STRIP_TAC STRIP_TAC 
 Cases_on `j1` Cases_on `j2`  Cases_on `p` Cases_on `r` Cases_on `r'` Cases_on `r` 
