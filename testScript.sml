@@ -118,7 +118,7 @@ val get_cand_tally_def = Define `
             (get_cand_tally (c : Cand) [] = (~ 1))
             /\ (get_cand_tally c (h ::t) = (if  (c = FST h) then SND h
                                             else (get_cand_tally c t))) `;
-   
+    
 val get_cand_pile_def = Define `
      (get_cand_pile (c : Cand) ([] : (Cand # (((Cand list) # rat) list)) list) = [])
      /\ (get_cand_pile c (h ::t) = (if (c = FST h) then SND h
@@ -129,21 +129,56 @@ val empty_cand_pile_def = Define `
    /\ (empty_cand_pile c (h ::t) = (if (c = FST h) then ((c, []) :: t)
                                     else h :: (empty_cand_pile c t))) `;
 
-          
-val elim_def = Define ` (elim st (qu :rat) j1 j2) = (?t p e h nh nba np.
+(*a legal tally consists of all of the initial Candidates each of whom appers only once in the list*)     
+val legal_tally_cand_def = Define ` 
+   (legal_tally_cand l t (c: Cand) =  (MEM c l) 
+                /\ (?(x:rat). (?l1 l2. (t = l1 ++ [(c,x)] ++ l2) 
+                                   /\ (~ MEM c (MAP FST l1))
+                                   /\ (~ MEM c (MAP FST l2))))) `;
+   
+val Legal_Tally_Cand_def = Define `
+      (Legal_Tally_Cand l ([]: (Cand # rat) list) (c:Cand) = F)
+   /\ (Legal_Tally_Cand l (h::t) c =  (MEM c l) 
+                                   /\ (if (FST h = c) then (~ MEM c (MAP FST t)) 
+                                       else Legal_Tally_Cand l t c)) `;
+  
+val CAND_EQ_DEC = Q.store_thm ("CAND_EQ_DEC", 
+    `!(c1: Cand) c2. (c1 = c2) \/ (c1 <> c2) `,
+       REPEAT STRIP_TAC 
+          >> Cases_on `c1 = c2` 
+             >- (DISJ1_TAC >> METIS_TAC []) 
+             >- (DISJ2_TAC >> METIS_TAC []))    
+           
+
+  
+ qspecl_then;
+
+`!t c. (t <> []) ==> (MEM (c, get_cand_tally c t) t) `
+Induct_on `t` METIS_TAC []        
+
+ASM_SIMP_TAC bool_ss [NOT_CONS_NIL] STRIP_TAC        
+ASSUME_TAC CAND_EQ_DEC first_assum (qspecl_then [`c`, `FST h`] strip_assume_tac) rw[] DISJ1_TAC EVAL_TAC ASM_SIMP_TAC bool_ss [PAIR] 
+
+EVAL_TAC DISJ2_TAC    
+     
+
+`!l t c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `                           
+            
+val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st) 
     /\ (LENGTH e < st)
-    /\ (!c. (MEM c h ==> (?x. MEM (c,x) t /\ ( x < qu))))  
-    /\ (?c'. (MEM c' h) 
-          /\ (!d. (MEM d h ==> (?x y. (MEM (c',x) t) /\ (MEM (d,y) t) /\ ( x <= y))))
-      /\ (?l1 l2. (nh = l1 ++l2) /\ (h = l1 ++ [c']++ l2) /\ ~ (MEM c' l1) /\ ~(MEM c' l2))
-      /\ (nba = get_cand_pile c' p)
-      /\ ( MEM (c',[]) np)
-      /\ (!d'. ((d' <> c') ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
-                                 /\ (MEM (d',l) np ==> MEM (d',l) p))))
-      /\ (j2 = state (nba, t, np, [], e, nh)))) `; 
-               
+    /\ (!c'. legal_tally_cand l t c')
+    /\ (!c'. (MEM c' h ==> (?x. MEM (c',x) t /\ ( x < qu))))  
+    /\ (MEM c h) 
+    /\ (!d. (MEM d h ==> (?x y. (MEM (c,x) t) /\ (MEM (d,y) t) /\ ( x <= y))))
+    /\ (?l1 l2. (nh = l1 ++l2) /\ (h = l1 ++ [c]++ l2) /\ ~ (MEM c l1) /\ ~(MEM c l2)
+    /\ (nba = get_cand_pile c p)
+    /\ ( MEM (c,[]) np)
+    /\ (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
+                               /\ (MEM (d',l) np ==> MEM (d',l) p))))
+    /\ (j2 = state (nba, t, np, [], e, nh)))) `; 
+                  
 
 val less_than_quota_def = Define `
                  (less_than_quota qu [] l = T)
