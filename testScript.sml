@@ -6,10 +6,11 @@ open numTheory
 open ratTheory
 open bossLib
 open fracTheory 
-open listLib
+open listLib 
+open satTheory 
 ;   
           
-        
+         
 val _ = new_theory "test" ; 
 
 val _ = Hol_datatype ` Cand = cand of string ` ; 
@@ -115,10 +116,9 @@ val eqe_def = Define `
                                  /\ (~ (MEM c l2))) `;
    
 val get_cand_tally_def = Define `
-            (get_cand_tally (c : Cand) [] = (~ 1))
-            /\ (get_cand_tally c (h ::t) = (if  (c = FST h) then SND h
+           (get_cand_tally (c: Cand) (h ::t) = (if  (c = FST h) then SND h
                                             else (get_cand_tally c t))) `;
-    
+      
 val get_cand_pile_def = Define `
      (get_cand_pile (c : Cand) ([] : (Cand # (((Cand list) # rat) list)) list) = [])
      /\ (get_cand_pile c (h ::t) = (if (c = FST h) then SND h
@@ -141,7 +141,7 @@ val Legal_Tally_Cand_def = Define `
    /\ (Legal_Tally_Cand l (h::t) c =  (MEM c l) 
                                    /\ (if (FST h = c) then (~ MEM c (MAP FST t)) 
                                        else Legal_Tally_Cand l t c)) `;
-  
+   
 val CAND_EQ_DEC = Q.store_thm ("CAND_EQ_DEC", 
     `!(c1: Cand) c2. (c1 = c2) \/ (c1 <> c2) `,
        REPEAT STRIP_TAC 
@@ -149,17 +149,19 @@ val CAND_EQ_DEC = Q.store_thm ("CAND_EQ_DEC",
              >- (DISJ1_TAC >> METIS_TAC []) 
              >- (DISJ2_TAC >> METIS_TAC []))    
            
-
   
+  type_of ``MAP``;
  qspecl_then;
 
-`!t c. (t <> []) ==> (MEM (c, get_cand_tally c t) t) `
-Induct_on `t` METIS_TAC []        
+`!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) ==> (MEM (c, get_cand_tally c (h::t)) (h::t)) `
 
-ASM_SIMP_TAC bool_ss [NOT_CONS_NIL] STRIP_TAC        
-ASSUME_TAC CAND_EQ_DEC first_assum (qspecl_then [`c`, `FST h`] strip_assume_tac) rw[] DISJ1_TAC EVAL_TAC ASM_SIMP_TAC bool_ss [PAIR] 
+Induct_on `t` 
+EVAL_TAC STRIP_TAC STRIP_TAC STRIP_TAC rw[]  
+ 
+ASSUME_TAC CAND_EQ_DEC REPEAT STRIP_TAC first_assum (qspecl_then [`c`,`FST h'`] strip_assume_tac) rw[] EVAL_TAC DISJ1_TAC ASM_SIMP_TAC bool_ss [PAIR]     
 
-EVAL_TAC DISJ2_TAC    
+ASSUME_TAC MEM ASSUME_TAC (INST_TYPE [alpha|-> ``:(Cand # rat)``,beta|-> ``:Cand``] MAP) first_assum (strip_assume_tac) first_x_assum (qspecl_then [`FST`,`h'`,`h::t`] strip_assume_tac) first_x_assum (qspecl_then [`h`,`c`] strip_assume_tac) RW_TAC bool_ss [] FULL_SIMP_TAC list_ss [] DISJ2_TAC DISJ1_TAC EVAL_TAC rw[] DISJ2_TAC
+  
      
 
 `!l t c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `                           
