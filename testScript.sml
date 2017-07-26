@@ -149,20 +149,46 @@ val CAND_EQ_DEC = Q.store_thm ("CAND_EQ_DEC",
              >- (DISJ1_TAC >> METIS_TAC []) 
              >- (DISJ2_TAC >> METIS_TAC []))    
            
+val GET_CAND_TALLY_HEAD_REMOVAL_def = Q.store_thm ("GET_CAND_TALLY_HEAD_REM",
+`!(h: Cand #rat) t c. (~(c = FST h)) ==> (get_cand_tally c (h::t) = get_cand_tally c t)`,  Induct_on `t` 
+               >- rw [get_cand_tally_def] 
+               >- (REPEAT STRIP_TAC 
+                 >> first_assum (qspecl_then [`h'`,`c`] strip_assume_tac) 
+                   >> EVAL_TAC 
+                     >> rw []));  
+  
   
   type_of ``MAP``;
  qspecl_then;
-
-`!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) ==> (MEM (c, get_cand_tally c (h::t)) (h::t)) `
-
-Induct_on `t` 
-EVAL_TAC STRIP_TAC STRIP_TAC STRIP_TAC rw[]  
  
-ASSUME_TAC CAND_EQ_DEC REPEAT STRIP_TAC first_assum (qspecl_then [`c`,`FST h'`] strip_assume_tac) rw[] EVAL_TAC DISJ1_TAC ASM_SIMP_TAC bool_ss [PAIR]     
-
-ASSUME_TAC MEM ASSUME_TAC (INST_TYPE [alpha|-> ``:(Cand # rat)``,beta|-> ``:Cand``] MAP) first_assum (strip_assume_tac) first_x_assum (qspecl_then [`FST`,`h'`,`h::t`] strip_assume_tac) first_x_assum (qspecl_then [`h`,`c`] strip_assume_tac) RW_TAC bool_ss [] FULL_SIMP_TAC list_ss [] DISJ2_TAC DISJ1_TAC EVAL_TAC rw[] DISJ2_TAC
-  
-     
+val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
+ `!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) 
+                                    ==> (MEM (c, get_cand_tally c (h::t)) (h::t)) `,        Induct_on `t`      
+       >- (EVAL_TAC 
+         >> STRIP_TAC 
+          >> STRIP_TAC 
+           >> STRIP_TAC 
+            >> rw[])       
+       >- ((ASSUME_TAC CAND_EQ_DEC 
+        >> REPEAT STRIP_TAC 
+         >> first_assum (qspecl_then [`c`,`FST h'`] strip_assume_tac))   
+           >- (rw[] 
+            >> EVAL_TAC 
+              >> DISJ1_TAC >> ASM_SIMP_TAC bool_ss [PAIR])        
+           >- ((ASSUME_TAC MEM 
+             >> ASSUME_TAC (INST_TYPE [alpha|-> ``:(Cand # rat)``,beta|-> ``:Cand``] MAP)              >> first_assum (strip_assume_tac) 
+               >> first_x_assum (qspecl_then [`FST`,`h'`,`h::t`] strip_assume_tac) 
+                >> first_x_assum (qspecl_then [`h`,`c`] strip_assume_tac) 
+                 >> RW_TAC bool_ss [] 
+                  >> FULL_SIMP_TAC list_ss [])
+                    >- (DISJ2_TAC 
+                      >> DISJ1_TAC 
+                        >> EVAL_TAC 
+                         >> rw[])     
+                    >- (DISJ2_TAC 
+                      >> RW_TAC bool_ss [GET_CAND_TALLY_HEAD_REMOVAL_def]))));
+   
+       
 
 `!l t c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `                           
             
