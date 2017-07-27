@@ -9,7 +9,7 @@ open fracTheory
 open listLib 
 open satTheory 
 ;   
-          
+            
          
 val _ = new_theory "test" ; 
 
@@ -132,10 +132,16 @@ val empty_cand_pile_def = Define `
 (*a legal tally consists of all of the initial Candidates each of whom appers only once in the list*)     
 val legal_tally_cand_def = Define ` 
    (legal_tally_cand l t (c: Cand) =  (MEM c l) 
-                /\ (?(x:rat). (?l1 l2. (t = l1 ++ [(c,x)] ++ l2) 
+                /\ (?l1. (?(x:rat) l2. (t = l1 ++ [(c,x)] ++ l2) 
                                    /\ (~ MEM c (MAP FST l1))
                                    /\ (~ MEM c (MAP FST l2))))) `;
-   
+      
+val legal_tally_cand2_def =  Define ` 
+   (legal_tally_cand2 l t (c: Cand) =  (MEM c l) 
+                /\ (?(x:rat) l2. (t = [(c,x)] ++ l2) 
+                                   /\ (~ MEM c (MAP FST l2)))) `;
+    
+ 
 val Legal_Tally_Cand_def = Define `
       (Legal_Tally_Cand l ([]: (Cand # rat) list) (c:Cand) = F)
    /\ (Legal_Tally_Cand l (h::t) c =  (MEM c l) 
@@ -147,7 +153,7 @@ val CAND_EQ_DEC = Q.store_thm ("CAND_EQ_DEC",
        REPEAT STRIP_TAC 
           >> Cases_on `c1 = c2` 
              >- (DISJ1_TAC >> METIS_TAC []) 
-             >- (DISJ2_TAC >> METIS_TAC []))    
+             >- (DISJ2_TAC >> METIS_TAC []));    
            
 val GET_CAND_TALLY_HEAD_REMOVAL_def = Q.store_thm ("GET_CAND_TALLY_HEAD_REM",
 `!(h: Cand #rat) t c. (~(c = FST h)) ==> (get_cand_tally c (h::t) = get_cand_tally c t)`,  Induct_on `t` 
@@ -157,13 +163,11 @@ val GET_CAND_TALLY_HEAD_REMOVAL_def = Q.store_thm ("GET_CAND_TALLY_HEAD_REM",
                    >> EVAL_TAC 
                      >> rw []));  
   
-  
-  type_of ``MAP``;
- qspecl_then;
  
 val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
  `!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) 
-                                    ==> (MEM (c, get_cand_tally c (h::t)) (h::t)) `,        Induct_on `t`      
+                                    ==> (MEM (c, get_cand_tally c (h::t)) (h::t)) `, 
+   Induct_on `t`      
        >- (EVAL_TAC 
          >> STRIP_TAC 
           >> STRIP_TAC 
@@ -176,7 +180,8 @@ val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
             >> EVAL_TAC 
               >> DISJ1_TAC >> ASM_SIMP_TAC bool_ss [PAIR])        
            >- ((ASSUME_TAC MEM 
-             >> ASSUME_TAC (INST_TYPE [alpha|-> ``:(Cand # rat)``,beta|-> ``:Cand``] MAP)              >> first_assum (strip_assume_tac) 
+            >> ASSUME_TAC (INST_TYPE [alpha|-> ``:(Cand # rat)``,beta|-> ``:Cand``] MAP)
+              >> first_assum (strip_assume_tac) 
                >> first_x_assum (qspecl_then [`FST`,`h'`,`h::t`] strip_assume_tac) 
                 >> first_x_assum (qspecl_then [`h`,`c`] strip_assume_tac) 
                  >> RW_TAC bool_ss [] 
@@ -187,11 +192,33 @@ val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
                          >> rw[])     
                     >- (DISJ2_TAC 
                       >> RW_TAC bool_ss [GET_CAND_TALLY_HEAD_REMOVAL_def]))));
-   
-       
+    
+        
 
-`!l t c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `                           
-            
+val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
+   `!l  (t: (Cand # rat) list) c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `,                           
+ 
+     Induct_on `t`          
+       >- ASM_SIMP_TAC bool_ss [Legal_Tally_Cand_def, legal_tally_cand_def]             
+       >- ((ASSUME_TAC CAND_EQ_DEC 
+         >> STRIP_TAC 
+          >> STRIP_TAC 
+           >> STRIP_TAC 
+            >> first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac))    
+              >- (RW_TAC bool_ss [Legal_Tally_Cand_def, legal_tally_cand_def] 
+                >> MAP_EVERY qexists_tac [`[]`, `SND h`,`t`] 
+                  >> rw[])   
+              >- (first_assum (qspecl_then [`l`,`c`] strip_assume_tac) 
+                >> FULL_SIMP_TAC bool_ss [Legal_Tally_Cand_def, legal_tally_cand_def] 
+                 >> STRIP_TAC 
+                   >> FULL_SIMP_TAC bool_ss [] 
+                     >> MAP_EVERY qexists_tac [`h::l1`,`x`,`l2`] 
+                      >> rw[]))) ;  
+   
+   
+   
+     
+           
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st) 
