@@ -9,10 +9,10 @@ open fracTheory
 open listLib 
 open satTheory 
 ;   
-            
+             
          
 val _ = new_theory "test" ; 
-
+ 
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -194,7 +194,7 @@ val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
                       >> RW_TAC bool_ss [GET_CAND_TALLY_HEAD_REMOVAL_def]))));
     
         
-
+ 
 val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
    `!l  (t: (Cand # rat) list) c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `,                           
  
@@ -214,11 +214,40 @@ val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
                    >> FULL_SIMP_TAC bool_ss [] 
                      >> MAP_EVERY qexists_tac [`h::l1`,`x`,`l2`] 
                       >> rw[]))) ;  
+      
+val legal_to_Legal_tally_cand = Q.store_thm ("legal_to_Legal_tallt_cand",
+    `!l (t: (Cand # rat) list) c. (legal_tally_cand l t c) ==> (Legal_Tally_Cand l t c) `,
+ 
+      Induct_on `t`      
+        >- rw[legal_tally_cand_def, Legal_Tally_Cand_def] 
    
-   
-   
+          >- ((STRIP_TAC 
+           >> STRIP_TAC 
+            >> STRIP_TAC 
+             >> ASSUME_TAC CAND_EQ_DEC 
+              >> first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac))      
+          >- ((RW_TAC bool_ss [legal_tally_cand_def, Legal_Tally_Cand_def] 
+            >> ASSUME_TAC (INST_TYPE [alpha |-> ``:(Cand #rat)``] list_nchotomy) 
+              >> first_assum (qspecl_then [`l1`] strip_assume_tac))
+                >- FULL_SIMP_TAC bool_ss [APPEND,APPEND_NIL,CONS_11] 
+                >- (FULL_SIMP_TAC bool_ss [APPEND,CONS_11] 
+                  >> rw [] 
+                    >> FULL_SIMP_TAC bool_ss [MEM,MAP]))
+        >- ((STRIP_TAC 
+          >> RW_TAC bool_ss [legal_tally_cand_def,Legal_Tally_Cand_def])  
+             >- FULL_SIMP_TAC bool_ss [legal_tally_cand_def]  
+             >- ((first_assum (qspecl_then [`l`,`c`] strip_assume_tac) 
+               >> FULL_SIMP_TAC bool_ss [legal_tally_cand_def] 
+                 >> ASSUME_TAC (INST_TYPE [alpha |-> ``:(Cand #rat)``] list_nchotomy)
+                   >> first_assum (qspecl_then [`l1`] strip_assume_tac)) 
+                     >- FULL_SIMP_TAC bool_ss [APPEND,APPEND_NIL,CONS_11,FST]           
+                     >- (rw [] 
+                       >> FULL_SIMP_TAC bool_ss [APPEND,CONS_11,MAP,MEM] 
+                         >> rw [] 
+                           >> METIS_TAC []))))) ;
+    
+ 
      
-           
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st) 
