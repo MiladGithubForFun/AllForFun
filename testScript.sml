@@ -10,9 +10,9 @@ open listLib
 open satTheory 
 ;   
              
-         
+          
 val _ = new_theory "test" ; 
- 
+   
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -136,10 +136,6 @@ val legal_tally_cand_def = Define `
                                    /\ (~ MEM c (MAP FST l1))
                                    /\ (~ MEM c (MAP FST l2))))) `;
       
-val legal_tally_cand2_def =  Define ` 
-   (legal_tally_cand2 l t (c: Cand) =  (MEM c l) 
-                /\ (?(x:rat) l2. (t = [(c,x)] ++ l2) 
-                                   /\ (~ MEM c (MAP FST l2)))) `;
     
  
 val Legal_Tally_Cand_def = Define `
@@ -246,8 +242,68 @@ val legal_to_Legal_tally_cand = Q.store_thm ("legal_to_Legal_tallt_cand",
                          >> rw [] 
                            >> METIS_TAC []))))) ;
     
+val remove_one_cand_def = Define `
+                         (remove_one_cand (c :Cand) [] = [])
+                      /\ (remove_one_cand c (h::t) = (if c = h then t 
+                                                      else h:: remove_one_cand c t)) `;
+
+ val not_elem = Define `   (not_elem a [] = T)
+                       /\ (not_elem a (h::t) = (if (a = h) then F
+                                               else (not_elem a t))) `;
+   
+val no_dup = Define  `   (no_dup [] = T)
+                      /\ (no_dup (h::t) = (if (not_elem h t) then (no_dup t)
+                                           else F)) `;  
+
+(* the following predicate states when a list is duplicate-free w.r.t. a particular candidate*) 
+val NO_DUP_PRED = Define `
+   (NO_DUP_PRED h (c: Cand) = (h = []) \/ (~ MEM c h) \/ 
+                              (?h1 h2. (h = h1 ++ [c]++ h2) /\ (~ MEM c h1) /\ (~ MEM c h2))) `;  
+  
+
+val not_elem_NOT_MEM = Q.store_thm ("not_elem_NOT_MEM",
+   `!h (c: Cand). (not_elem c h) <=> (~MEM c h)`,
  
-     
+      Induct_on `h`
+           >- rw [not_elem] 
+           >- rw[not_elem]);  
+ 
+         
+val no_dup_IMP_NO_DUP_PRED = Q.store_thm ("no_dup_IMP_NO_DUP",
+   ` !h (c :Cand). (no_dup h ) ==> (NO_DUP_PRED h c) `,
+
+     Induct_on `h`
+         >- rw [NO_DUP_PRED]  
+         >- ((STRIP_TAC >> STRIP_TAC >> ASSUME_TAC CAND_EQ_DEC 
+           >> first_x_assum (qspecl_then [`c`,`h'`] strip_assume_tac))                
+              >- (first_assum (qspecl_then [`c`] strip_assume_tac) 
+                >> RW_TAC bool_ss [NO_DUP_PRED,no_dup]  
+                  >> DISJ2_TAC 
+                    >> MAP_EVERY qexists_tac [`[]`,`h`] 
+                      >> rw [] 
+                        >> ASSUME_TAC not_elem_NOT_MEM  
+                          >> first_assum (qspecl_then [`h`,`c`] strip_assume_tac) 
+                            >> FULL_SIMP_TAC bool_ss [])  
+              >- ((first_x_assum (qspecl_then [`c`] strip_assume_tac) 
+                >> STRIP_TAC  
+                  >> FULL_SIMP_TAC bool_ss [NO_DUP_PRED,no_dup])   
+                     >- (DISJ2_TAC >> rw [])  
+                     >- (DISJ2_TAC >> rw []) 
+                     >- (REPEAT DISJ2_TAC 
+                       >> MAP_EVERY qexists_tac [`h'::h1`,`h2`] 
+                         >> METIS_TAC [APPEND,MEM])))); 
+                        
+ 
+ 
+
+
+
+
+
+
+
+`!h1 h2 (c: Cand). (h2 = remove_one_cand c h1) <=> (eqe c h2 h1) `
+
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st) 
@@ -284,10 +340,7 @@ val is_weakest_cand_def = Define `
                                                         then is_weakest_cand c t l
                                                     else F)) `;
 
-val remove_one_cand_def = Define `
-                         (remove_one_cand (c :Cand) [] = [])
-                      /\ (remove_one_cand c (h::t) = (if c = h then t 
-                                                      else h:: remove_one_cand c t)) `;
+
    
 val non_empty = Define ` (non_empty [] = F)
                       /\ (non_empty _ = T) `;
@@ -375,13 +428,7 @@ rw[Elim_def] rw[elim_def]
 
 
    
-val not_elem = Define `   (not_elem a [] = T)
-                       /\ (not_elem a (h::t) = (if (a = h) then F
-                                               else (not_elem a t))) `;
-   
-val no_dup = Define  `   (no_dup [] = T)
-                      /\ (no_dup (h::t) = (if (not_elem h t) then (no_dup t)
-                                           else F)) `;  
+
  
 val rec Filter = fn  [] => []
                     |(h::t) => if (no_dup (fst h)) then
