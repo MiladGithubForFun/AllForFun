@@ -12,7 +12,7 @@ open satTheory
              
           
 val _ = new_theory "test" ; 
-   
+      
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -292,11 +292,85 @@ val no_dup_IMP_NO_DUP_PRED = Q.store_thm ("no_dup_IMP_NO_DUP",
                      >- (REPEAT DISJ2_TAC 
                        >> MAP_EVERY qexists_tac [`h'::h1`,`h2`] 
                          >> METIS_TAC [APPEND,MEM])))); 
-                        
- 
+          
+val NO_DUP_HEAD_REMOVAL = Q.store_thm ("NO_DUP_HEAD_REMOVAL",
+    `!h h'. (!(c: Cand). NO_DUP_PRED (h'::h) c) ==> (!c. NO_DUP_PRED h c) `,
+  
+        (rw [NO_DUP_PRED] >> first_assum (qspecl_then [`c`] strip_assume_tac))
+          >- (DISJ2_TAC >> DISJ1_TAC >> rw []) 
+          >- ((ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy)
+            >> first_assum (qspecl_then [`h1`] strip_assume_tac))
+              >- (DISJ2_TAC 
+                >> DISJ1_TAC 
+                  >> FULL_SIMP_TAC bool_ss [APPEND,CONS_11])  
+              >- (REPEAT DISJ2_TAC 
+                 >> MAP_EVERY qexists_tac [`t`,`h2`] 
+                   >> FULL_SIMP_TAC list_ss [CONS_11,MEM])));         
+           
  
 
+val NO_DUP_PRED_to_no_dup = Q.store_thm ("NO_DUP_PRED_to_no_dup",
+  `!h. (!(c: Cand). (NO_DUP_PRED h c)) ==> (no_dup h) `,
+ 
+     Induct_on `h`
+         >- rw [no_dup]  
+         >- ((STRIP_TAC >> STRIP_TAC >> ASSUME_TAC NO_DUP_HEAD_REMOVAL 
+   >> first_assum (qspecl_then [`h`,`h'`] strip_assume_tac) >> FULL_SIMP_TAC bool_ss [] 
+   >> rw[no_dup] >> first_assum (qspecl_then [`h'`] strip_assume_tac) 
+   >> FULL_SIMP_TAC list_ss [NO_DUP_PRED,not_elem_NOT_MEM,MEM] 
+   >> ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy) 
+   >> first_assum (qspecl_then [`h1`] strip_assume_tac))
+      >- FULL_SIMP_TAC list_ss [CONS_11,MEM]          
+      >- FULL_SIMP_TAC list_ss [CONS_11,MEM]));
+   
+  
 
+
+
+
+
+
+
+
+   ASSUME_TAC CAND_EQ_DEC   
+   first_x_assum (qspecl_then [`c`,`h'`] strip_assume_tac)
+   
+      first_assum (qspecl_then [`c`] strip_assume_tac)
+      FULL_SIMP_TAC bool_ss [NO_DUP_PRED,MEM]               
+         
+          rw[no_dup]                             
+         
+          METIS_TAC []
+
+          
+
+
+
+
+Induct_on `h` 
+  rw [no_dup] 
+     
+  STRIP_TAC STRIP_TAC ASSUME_TAC CAND_EQ_DEC   
+  first_x_assum (qspecl_then [`c`,`h'`] strip_assume_tac) 
+          rw [NO_DUP_PRED,no_dup]     
+                
+               ASSUME_TAC (INST_TYPE  [alpha |-> ``:Cand``] list_nchotomy)  
+               first_assum (qspecl_then [`h1`] strip_assume_tac)
+                     
+                    METIS_TAC [CONS_11,APPEND_NIL,APPEND,not_elem_NOT_MEM]
+            
+                    METIS_TAC [CONS_11,APPEND,APPEND_NIL,not_elem_NOT_MEM,MEM] 
+       
+               first_assum (qspecl_then [`c`] strip_assume_tac)            
+               ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy) 
+               first_x_assum (qspecl_then [`h1`] strip_assume_tac) 
+                       
+                       FULL_SIMP_TAC bool_ss [CONS_11,NO_DUP_PRED,MEM,APPEND,APPEND_NIL]                
+                       
+                       METIS_TAC [CONS_11,APPEND,APPEND_NIL,not_elem_NOT_MEM,MEM]  
+          
+          rw [NO_DUP_PRED,no_dup,MEM] 
+ 
 
 
 
