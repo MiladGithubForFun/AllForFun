@@ -314,14 +314,18 @@ val NO_DUP_PRED_to_no_dup = Q.store_thm ("NO_DUP_PRED_to_no_dup",
  
      Induct_on `h`
          >- rw [no_dup]  
-         >- ((STRIP_TAC >> STRIP_TAC >> ASSUME_TAC NO_DUP_HEAD_REMOVAL 
-   >> first_assum (qspecl_then [`h`,`h'`] strip_assume_tac) >> FULL_SIMP_TAC bool_ss [] 
-   >> rw[no_dup] >> first_assum (qspecl_then [`h'`] strip_assume_tac) 
-   >> FULL_SIMP_TAC list_ss [NO_DUP_PRED,not_elem_NOT_MEM,MEM] 
-   >> ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy) 
-   >> first_assum (qspecl_then [`h1`] strip_assume_tac))
-      >- FULL_SIMP_TAC list_ss [CONS_11,MEM]          
-      >- FULL_SIMP_TAC list_ss [CONS_11,MEM]));
+         >- ((STRIP_TAC 
+           >> STRIP_TAC 
+             >> ASSUME_TAC NO_DUP_HEAD_REMOVAL 
+               >> first_assum (qspecl_then [`h`,`h'`] strip_assume_tac) 
+                 >> FULL_SIMP_TAC bool_ss [] 
+                   >> rw[no_dup] 
+                     >> first_assum (qspecl_then [`h'`] strip_assume_tac) 
+                       >> FULL_SIMP_TAC list_ss [NO_DUP_PRED,not_elem_NOT_MEM,MEM] 
+                         >> ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy) 
+                           >> first_assum (qspecl_then [`h1`] strip_assume_tac))
+                              >- FULL_SIMP_TAC list_ss [CONS_11,MEM]          
+                              >- FULL_SIMP_TAC list_ss [CONS_11,MEM]));
    
   
 
