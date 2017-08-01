@@ -10,7 +10,7 @@ open listLib
 open satTheory 
 ;   
              
-          
+           
 val _ = new_theory "test" ; 
        
 val _ = Hol_datatype ` Cand = cand of string ` ; 
@@ -361,48 +361,57 @@ val NO_DUP_TAIL_ONE_CAND = Q.store_thm ("NO_DUP_TAIL_ONE_CAND",
          >> first_assum (qspecl_then [`l2`,`c`] strip_assume_tac)
            >> FULL_SIMP_TAC list_ss [MEM,remove_one_cand_def])); 
  
-
-
-
-
-
-
-
  
-`!h (c: Cand). (MEM c h) /\ (NO_DUP_PRED h c) ==> (eqe c (remove_one_cand c h) h) `
+val REMOVE_ONE_CAND_NOTIN = Q.store_thm ("REMOVE_ONE_CAND_NOTIN",
+ `!l (c: Cand). (~ MEM c l) ==> (remove_one_cand c l = l) `,
 
- Induct_on `h` 
+    Induct_on `l`
+        >- rw [remove_one_cand_def]
+        >- (REPEAT STRIP_TAC 
+          >> FULL_SIMP_TAC list_ss [MEM, remove_one_cand_def])) ;  
+
+
+
     
-    rw []    
+val EQE_REMOVE_ONE_CAND = Q.store_thm ("EQE_REMOVE_ONE_CAND",
+  `!h (c: Cand). (MEM c h) /\ (NO_DUP_PRED h c) ==> (eqe c (remove_one_cand c h) h) `,
  
-    STRIP_TAC STRIP_TAC ASSUME_TAC CAND_EQ_DEC    
-    first_x_assum (qspecl_then [`c`,`h'`] strip_assume_tac)   
-       
-       rw[eqe_def,remove_one_cand_def,NO_DUP_PRED] MAP_EVERY qexists_tac [`[]`,`h`] EVAL_TAC  
-       ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy)  
-       first_assum (qspecl_then [`h1`] strip_assume_tac) 
-               
-           FULL_SIMP_TAC list_ss [CONS_11,MEM] 
-     
-           FULL_SIMP_TAC list_ss [list_11,MEM] 
-
-       STRIP_TAC first_assum (qspecl_then [`c`] strip_assume_tac)   
-       FULL_SIMP_TAC list_ss [MEM,NO_DUP_HEAD_REMOVAL] 
-         
-         rw [] 
-       
-         ASSUME_TAC NO_DUP_TAIL_ONE_CAND 
-         first_assum (qspecl_then [`h`,`h'`,`c`] strip_assume_tac) 
-         FULL_SIMP_TAC list_ss [NO_DUP_PRED,MEM]
-            
-            METIS_TAC []     
-
-            ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy)   
-            first_assum (qspecl_then [`h1`] strip_assume_tac)  
+ Induct_on `h`  
+     >- rw []       
+  
+     >- ((STRIP_TAC 
+       >> STRIP_TAC 
+         >> ASSUME_TAC CAND_EQ_DEC
+           >> first_x_assum (qspecl_then [`c`,`h'`] strip_assume_tac))    
+               >- ((rw[eqe_def,remove_one_cand_def,NO_DUP_PRED] 
+                  >> MAP_EVERY qexists_tac [`[]`,`h`] 
+                     >> EVAL_TAC   
+                       >> ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy)   
+                         >> first_assum (qspecl_then [`h1`] strip_assume_tac))  
+                             >- FULL_SIMP_TAC list_ss [CONS_11,MEM]  
+                             >- FULL_SIMP_TAC list_ss [list_11,MEM])  
+               >- ((STRIP_TAC 
+                  >> first_x_assum (qspecl_then [`c`] strip_assume_tac) 
+                    >> ASSUME_TAC NO_DUP_TAIL_ONE_CAND 
+                       >> first_x_assum (qspecl_then [`h`,`h'`,`c`] strip_assume_tac)  
+                         >> FULL_SIMP_TAC list_ss [MEM])          
+                             >- rw []   
+                             >-  (`eqe c (remove_one_cand c h) h ` by metis_tac []
+                               >> FULL_SIMP_TAC bool_ss [eqe_def,remove_one_cand_def]          
+                                 >> MAP_EVERY qexists_tac [`h'::l1`,`l2`] 
+                                   >> RW_TAC list_ss [MEM])))) ;         
+                              
               
-               FULL_SIMP_TAC list_ss [CONS_11,MEM] 
-              
-               `(MEM c h) 
+        
+
+
+
+
+
+
+
+
+        `(MEM c h) 
                /\ ((h = []) 
                  \/ (~ MEM c h) 
                  \/ (?l1 l2. (h = l1 ++[c]++ l2) /\ (~ MEM c l1) /\ (~ MEM c l2)))`
