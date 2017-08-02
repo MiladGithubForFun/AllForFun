@@ -9,7 +9,7 @@ open fracTheory
 open listLib 
 open satTheory 
 ;   
-             
+            
            
 val _ = new_theory "test" ; 
         
@@ -411,12 +411,14 @@ val EQE_IMP_REMOVE_ONE_CAND = Q.store_thm ("EQE_IMP_REMOVE_ONE_CAND",
            >> first_assum (qspecl_then [`l1`,`[c]++l2`,`c`] strip_assume_tac)  
              >>rfs [remove_one_cand_def]);   
  
-
-
+     
   
-   
+val All_Tallies_Legal_def = Define `
+                               (All_Tallies_Legal (l: Cand list) [] = F)    
+                            /\ (All_Tallies_Legal l (h::t) = ((Legal_Tally_Cand l (h::t) (FST h)) 
+                                                           /\ (All_Tallies_Legal l t))) `;
 
-   
+    
   
      
        
