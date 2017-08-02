@@ -12,7 +12,7 @@ open satTheory
              
            
 val _ = new_theory "test" ; 
-       
+        
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -372,7 +372,6 @@ val REMOVE_ONE_CAND_NOTIN = Q.store_thm ("REMOVE_ONE_CAND_NOTIN",
 
 
 
-    
 val EQE_REMOVE_ONE_CAND = Q.store_thm ("EQE_REMOVE_ONE_CAND",
   `!h (c: Cand). (MEM c h) /\ (NO_DUP_PRED h c) ==> (eqe c (remove_one_cand c h) h) `,
  
@@ -402,30 +401,29 @@ val EQE_REMOVE_ONE_CAND = Q.store_thm ("EQE_REMOVE_ONE_CAND",
                                    >> RW_TAC list_ss [MEM])))) ;         
                               
               
+val EQE_IMP_REMOVE_ONE_CAND = Q.store_thm ("EQE_IMP_REMOVE_ONE_CAND",
+ `!h1 h2 (c: Cand). (MEM c h2) /\ (eqe c h1 h2) ==> (h1 = remove_one_cand c h2) `,
+
+   REPEAT STRIP_TAC 
+     >> FULL_SIMP_TAC list_ss [eqe_def]  
+       >> ASSUME_TAC REMOVE_ONE_CAND_APPEND  
+         >> FULL_SIMP_TAC list_ss [eqe_def,remove_one_cand_def]
+           >> first_assum (qspecl_then [`l1`,`[c]++l2`,`c`] strip_assume_tac)  
+             >>rfs [remove_one_cand_def]);   
+ 
+
+
+  
+   
+
+   
+  
+     
+       
+  
+
+
         
-
-
-
-
-
-
-
-
-        `(MEM c h) 
-               /\ ((h = []) 
-                 \/ (~ MEM c h) 
-                 \/ (?l1 l2. (h = l1 ++[c]++ l2) /\ (~ MEM c l1) /\ (~ MEM c l2)))`
-                 rw [] DISJ2_TAC FULL_SIMP_TAC list_ss [CONS_11,MEM]    
-                 ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy)    
-                 first_assum (qspecl_then [`h1`] strip_assume_tac)             
-                     
-                       FULL_SIMP_TAC list_ss [CONS_11,MEM]    
-                       
-                       FULL_SIMP_TAC list_ss [CONS_11,MEM] MAP_EVERY qexists_tac [`t`,`h2`]
-                       METIS_TAC []   
-                 
-                 METIS_TAC [MEM] 
-
                  
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
