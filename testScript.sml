@@ -430,12 +430,26 @@ val CandTally_DEC1_IMP_CandTally= Q.store_thm ("CandTally_DEC1_IMP_CandTally",
                        >- rfs [Valid_CandTally_DEC1_def,non_empty])); 
     
      
+    
+val CandTally_to_CandTally_DEC2 = Q.store_thm ("CandTally_to_CandTally_DEC2",
+   `!l t. (!c. (MEM c l) ==> (MEM c (MAP FST t))) ==> (Valid_CandTally_DEC2 t l) `,
+
+     Induct_on `l`
+        >- rw [Valid_CandTally_DEC2_def]
+        >- rfs [Valid_CandTally_DEC2_def]); 
    
+     
+val CandTally_DEC2_IMP_CandTally = Q.store_thm ("CandTally_DEC2_IMP_CandTally",
+  `!l t. (Valid_CandTally_DEC2 t l) ==> (!c. (MEM c l) ==> (MEM c (MAP FST t)))`,
 
-
-
-
-
+     Induct_on `l`
+         >- rw []
+         >- ((REPEAT STRIP_TAC  
+           >> FULL_SIMP_TAC list_ss [MEM])
+              >- FULL_SIMP_TAC list_ss [Valid_CandTally_DEC2_def]
+              >- rfs [Valid_CandTally_DEC2_def]));
+ 
+ 
 
 
 val REMOVE_ONE_CAND_APPEND = Q.store_thm ("REMOVE_ONE_CAND_APPEND",
