@@ -12,7 +12,7 @@ open satTheory
             
            
 val _ = new_theory "test" ; 
-        
+             
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -351,8 +351,94 @@ val NO_DUP_TAIL_ONE_CAND = Q.store_thm ("NO_DUP_TAIL_ONE_CAND",
                        >- (FULL_SIMP_TAC list_ss [MEM,CONS_11] 
                          >> MAP_EVERY qexists_tac [`t`,`h2`] 
                            >> METIS_TAC [])))) ;  
+     
+val Valid_Init_CandList = Define `
+     Valid_Init_CandList (l: Cand list) = ((l <> []) /\ (!c. NO_DUP_PRED l c)) `; 
+                                                 
+ 
+val Valid_CandTally = Define `
+     Valid_CandTally (t: (Cand # rat) list) l = (!c. (MEM c l) <=> (MEM c (MAP FST t))) `;
+
+   
+val Valid_CandTally_DEC1_def = Define `
+        (Valid_CandTally_DEC1 ([]: (Cand #rat) list) l = T)
+     /\ (Valid_CandTally_DEC1 (h::t) l = (MEM (FST h) l) /\ (Valid_CandTally_DEC1 t l)) `;
+          
+val Valid_CandTally_DEC2_def = Define `
+        (Valid_CandTally_DEC2 (t: (Cand # int) list) [] = T) 
+     /\ (Valid_CandTally_DEC2 t (l0::ls) = if (MEM l0 (MAP FST t)) 
+                                                then (Valid_CandTally_DEC2 t ls)
+                                           else F) `;
+
+val non_empty = Define ` (non_empty [] = F)
+                      /\ (non_empty _ = T) `;
+ 
+
+val empty_list_def = Define `
+                         (empty_list [] = T)
+                      /\ (empty_list _ = F) `;
+ 
+
+
+
+val CandTally_to_CandTally_DEC1 = Q.store_thm ("CandTally_to_CandTally_DEC1",
+ `!l t. (!c. (MEM c (MAP FST t)) ==> (MEM c l)) ==> (Valid_CandTally_DEC1 t l) `,
+
+    Induct_on `t` 
+       >- rw [Valid_CandTally_DEC1_def]
+       >- (REPEAT STRIP_TAC 
+          >> first_assum (qspecl_then [`FST h`] strip_assume_tac)
+            >> rfs[Valid_CandTally_DEC1_def,MAP]));
+                                                                                                                                                                                            
+val CandTally_DEC1_to_CandTally = Q.store_thm ("CandTally_DEC1_to_CandTally",
+ `!l t t0. (Valid_CandTally_DEC1 (t0::t) l) ==> (!c. MEM c (MAP FST (t0::t)) ==> (MEM c l))`,
+ 
+    Induct_on `t`
+        >- rw[Valid_CandTally_DEC1_def]
+        >- (REPEAT STRIP_TAC    
+            >> rfs [Valid_CandTally_DEC1_def] 
+              >> FULL_SIMP_TAC list_ss [Valid_CandTally_DEC1_def]
+                 >> rfs [Valid_CandTally_DEC1_def] 
+                   >> first_assum (qspecl_then [`l`,`t0`] strip_assume_tac)    
+                      >> rfs []));  
   
- val REMOVE_ONE_CAND_APPEND = Q.store_thm ("REMOVE_ONE_CAND_APPEND",
+  
+val non_empty_IS_CORRECT = Q.store_thm ("non_empty_IS_CORRECT",
+  `!(l: (Cand # rat) list). (non_empty l) ==> (?l0 ls. (l = l0::ls)) `,
+ 
+     (STRIP_TAC 
+       >> ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand #rat``] list_nchotomy)   
+         >> first_assum (qspecl_then [`l`] strip_assume_tac))   
+            >- rw [non_empty]   
+            >- rw[non_empty]);
+ 
+
+val CandTally_DEC1_IMP_CandTally= Q.store_thm ("CandTally_DEC1_IMP_CandTally",
+  `!l t. (Valid_CandTally_DEC1 t l) /\ (non_empty t) ==> (!c. MEM c (MAP FST t) ==> (MEM c l))`,
+
+      (REPEAT STRIP_TAC 
+        >> ASSUME_TAC non_empty_IS_CORRECT 
+          >> first_x_assum (qspecl_then [`t`] strip_assume_tac) 
+            >> `?t0 t1. (t = t0::t1)` by metis_tac [] 
+              >> RW_TAC bool_ss [] 
+                >> Induct_on `t1`) 
+                  >- rw[Valid_CandTally_DEC1_def]  
+                  >- ((REPEAT STRIP_TAC    
+                    >> rfs []) 
+                       >- rfs [Valid_CandTally_DEC1_def]
+                       >- rfs [Valid_CandTally_DEC1_def]
+                       >- rfs [Valid_CandTally_DEC1_def,non_empty])); 
+    
+     
+   
+
+
+
+
+
+
+
+val REMOVE_ONE_CAND_APPEND = Q.store_thm ("REMOVE_ONE_CAND_APPEND",
  `! l1 l2 (c: Cand). (~ MEM c l1) ==> (remove_one_cand c (l1 ++l2) = l1 ++ (remove_one_cand c l2))`,
 
    Induct_on `l1`  
@@ -409,24 +495,40 @@ val EQE_IMP_REMOVE_ONE_CAND = Q.store_thm ("EQE_IMP_REMOVE_ONE_CAND",
        >> ASSUME_TAC REMOVE_ONE_CAND_APPEND  
          >> FULL_SIMP_TAC list_ss [eqe_def,remove_one_cand_def]
            >> first_assum (qspecl_then [`l1`,`[c]++l2`,`c`] strip_assume_tac)  
-             >>rfs [remove_one_cand_def]);   
+             >> rfs [remove_one_cand_def]);   
  
      
   
 val All_Tallies_Legal_def = Define `
-                               (All_Tallies_Legal (l: Cand list) [] = F)    
+                               (All_Tallies_Legal (l: Cand list) [] = T)    
                             /\ (All_Tallies_Legal l (h::t) = ((Legal_Tally_Cand l (h::t) (FST h)) 
                                                            /\ (All_Tallies_Legal l t))) `;
 
+  
+val Legal_Init_CandList = Define `Legal_Init_CandList l t = ((l <> []) /\ (MAP FST t = l))`;
+
     
-  
-     
-       
-  
-
-
+`!l t. ((t <> []) /\ (All_Tallies_Legal l t = T)) ==> (!c. (MEM c l) ==> (Legal_Tally_Cand l t c = T)) `
         
-                 
+ Induct_on `t`
+ 
+   rw []
+ 
+   REPEAT STRIP_TAC ASSUME_TAC CAND_EQ_DEC first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac) 
+   
+        FULL_SIMP_TAC bool_ss [Legal_Tally_Cand_def,All_Tallies_Legal_def]  
+    
+        rw [Legal_Tally_Cand_def] FULL_SIMP_TAC bool_ss [All_Tallies_Legal_def]
+        Induct_on `t`  
+        
+               rw [] 
+
+
+
+
+
+
+          
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ (LENGTH (e ++ h) > st) 
@@ -465,13 +567,7 @@ val is_weakest_cand_def = Define `
 
 
    
-val non_empty = Define ` (non_empty [] = F)
-                      /\ (non_empty _ = T) `;
- 
 
-val empty_list_def = Define `
-                         (empty_list [] = T)
-                      /\ (empty_list _ = F) `;
    
 val APPEND_NIL_LEFT = Q.store_thm ("APPEND_NIL_LEFT", 
                                                 `!l. [] ++ l = l `,
