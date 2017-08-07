@@ -12,7 +12,7 @@ open satTheory
             
            
 val _ = new_theory "test" ; 
-             
+               
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -450,8 +450,6 @@ val CandTally_DEC2_IMP_CandTally = Q.store_thm ("CandTally_DEC2_IMP_CandTally",
               >- rfs [Valid_CandTally_DEC2_def]));
  
  
-
-
 val REMOVE_ONE_CAND_APPEND = Q.store_thm ("REMOVE_ONE_CAND_APPEND",
  `! l1 l2 (c: Cand). (~ MEM c l1) ==> (remove_one_cand c (l1 ++l2) = l1 ++ (remove_one_cand c l2))`,
 
@@ -511,43 +509,40 @@ val EQE_IMP_REMOVE_ONE_CAND = Q.store_thm ("EQE_IMP_REMOVE_ONE_CAND",
            >> first_assum (qspecl_then [`l1`,`[c]++l2`,`c`] strip_assume_tac)  
              >> rfs [remove_one_cand_def]);   
  
-     
-  
-val All_Tallies_Legal_def = Define `
-                               (All_Tallies_Legal (l: Cand list) [] = T)    
-                            /\ (All_Tallies_Legal l (h::t) = ((Legal_Tally_Cand l (h::t) (FST h)) 
-                                                           /\ (All_Tallies_Legal l t))) `;
-
-  
-val Legal_Init_CandList = Define `Legal_Init_CandList l t = ((l <> []) /\ (MAP FST t = l))`;
-
-    
-`!l t. ((t <> []) /\ (All_Tallies_Legal l t = T)) ==> (!c. (MEM c l) ==> (Legal_Tally_Cand l t c = T)) `
-        
- Induct_on `t`
  
-   rw []
+
  
-   REPEAT STRIP_TAC ASSUME_TAC CAND_EQ_DEC first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac) 
+
+`!l t c (x: rat). (NO_DUP_PRED (MAP FST t) c) /\ (MEM (c,x) t) ==> 
+            (get_cand_tally c t = x) `
+ 
+ 
+Induct_on `t`  
    
-        FULL_SIMP_TAC bool_ss [Legal_Tally_Cand_def,All_Tallies_Legal_def]  
-    
-        rw [Legal_Tally_Cand_def] FULL_SIMP_TAC bool_ss [All_Tallies_Legal_def]
-        Induct_on `t`  
+   rw[]
+  
+   REPEAT STRIP_TAC
+   
+   
+   STRIP_TAC ASSUME_TAC CAND_EQ_DEC  
+   REPEAT STRIP_TAC  
+   first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac)   
+   
+        FULL_SIMP_TAC list_ss [NO_DUP_PRED,MAP]   
         
-               rw [] 
+           `h = (FST h, SND h)` by rw[PAIR]  
+            `x = SND h`  rfs [PAIR_EQ]  
+       
 
-
-
-
-
-
+    
           
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
+    /\ (!c'. NO_DUP_PRED l c')
     /\ (LENGTH (e ++ h) > st) 
     /\ (LENGTH e < st)
-    /\ (!c'. legal_tally_cand l t c')
+    /\ (!c'. NO_DUP_PRED (MAP FST t) c')
+    /\ Valid_CandTally t l
     /\ (!c'. (MEM c' h ==> (?x. MEM (c',x) t /\ ( x < qu))))  
     /\ (MEM c h) 
     /\ (!d. (MEM d h ==> (?x y. (MEM (c,x) t) /\ (MEM (d,y) t) /\ ( x <= y))))
@@ -671,3 +666,26 @@ val rec Filter = fn  [] => []
                                else Filter t ; 
                             
                        
+val All_Tallies_Legal_def = Define `
+                               (All_Tallies_Legal (l: Cand list) [] = T)    
+                            /\ (All_Tallies_Legal l (h::t) = ((Legal_Tally_Cand l (h::t) (FST h)) 
+                                                           /\ (All_Tallies_Legal l t))) `;
+
+  
+val Legal_Init_CandList = Define `Legal_Init_CandList l t = ((l <> []) /\ (MAP FST t = l))`;
+
+    
+`!l t. ((t <> []) /\ (All_Tallies_Legal l t = T)) ==> (!c. (MEM c l) ==> (Legal_Tally_Cand l t c = T)) `
+        
+ Induct_on `t`
+ 
+   rw []
+ 
+   REPEAT STRIP_TAC ASSUME_TAC CAND_EQ_DEC first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac) 
+   
+        FULL_SIMP_TAC bool_ss [Legal_Tally_Cand_def,All_Tallies_Legal_def]  
+    
+        rw [Legal_Tally_Cand_def] FULL_SIMP_TAC bool_ss [All_Tallies_Legal_def]
+        Induct_on `t`  
+        
+               rw [] 
