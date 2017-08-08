@@ -365,11 +365,11 @@ val Valid_CandTally_DEC1_def = Define `
      /\ (Valid_CandTally_DEC1 (h::t) l = (MEM (FST h) l) /\ (Valid_CandTally_DEC1 t l)) `;
           
 val Valid_CandTally_DEC2_def = Define `
-        (Valid_CandTally_DEC2 (t: (Cand # int) list) [] = T) 
+        (Valid_CandTally_DEC2 (t: (Cand # rat) list) [] = T) 
      /\ (Valid_CandTally_DEC2 t (l0::ls) = if (MEM l0 (MAP FST t)) 
                                                 then (Valid_CandTally_DEC2 t ls)
                                            else F) `;
-
+ 
 val non_empty = Define ` (non_empty [] = F)
                       /\ (non_empty _ = T) `;
  
@@ -437,8 +437,8 @@ val CandTally_to_CandTally_DEC2 = Q.store_thm ("CandTally_to_CandTally_DEC2",
      Induct_on `l`
         >- rw [Valid_CandTally_DEC2_def]
         >- rfs [Valid_CandTally_DEC2_def]); 
-   
-     
+    
+      
 val CandTally_DEC2_IMP_CandTally = Q.store_thm ("CandTally_DEC2_IMP_CandTally",
   `!l t. (Valid_CandTally_DEC2 t l) ==> (!c. (MEM c l) ==> (MEM c (MAP FST t)))`,
 
@@ -562,9 +562,6 @@ val get_cand_tally_APPEND = Q.store_thm ("get_cand_tally_APPEND",
            >- (REPEAT STRIP_TAC >> FULL_SIMP_TAC list_ss [MEM,MAP,get_cand_tally_def])) ;  
  
  
-
-
-
 val EVERY_CAND_HAS_ONE_TALLY = Q.store_thm ("EVERY_CAND_HAS_ONE_TALLY",
   `!l t c (x: rat). (NO_DUP_PRED (MAP FST t) c) /\ (MEM (c,x) t) ==> (get_cand_tally c t = x) `,
  
@@ -579,18 +576,28 @@ val EVERY_CAND_HAS_ONE_TALLY = Q.store_thm ("EVERY_CAND_HAS_ONE_TALLY",
                           >> rfs [get_cand_tally_def,get_cand_tally_APPEND])); 
  
  
-
-
+val less_than_quota_def = Define `
+                 (less_than_quota qu [] l = T)
+              /\ (less_than_quota qu (h ::tl ) l = (if (get_cand_tally h l < qu) 
+                                                         then less_than_quota qu tl l
+                                                    else F)) `; 
+ 
  
        
   
            
-  
+ `!h t0 t1 (qu:rat). (less_than_quota qu h (t0::t1)) /\ (Valid_CandTally_DEC2 (t0::t1) h) ==> 
+         (!c. (MEM c h) ==> ?x. (MEM (c,x) (t0::t1)) /\ (x < qu))` 
+ 
+Induct_on `h`
+ 
+  rw [] 
 
-
-
-           
-
+  REPEAT STRIP_TAC  
+  `?t0 t1. (t = t0::t1)` by metis_tac[list_nchotomy] 
+  FULL_SIMP_TAC list_ss [MEM]           
+    
+    rfs [less_than_quota_def]
 
          
              
@@ -608,7 +615,10 @@ val EVERY_CAND_HAS_ONE_TALLY = Q.store_thm ("EVERY_CAND_HAS_ONE_TALLY",
           
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
-    /\ (!c'. NO_DUP_PRED l c')
+    /\ Valid_Init_CandList l
+    /\ (!c'. (MEM c' h) \/ (MEM c' e) ==> (MEM c' l))
+    /\ (!c'. NO_DUP_PRED h c')
+    /\ (!c'. NO_DUP_PRED e c')
     /\ (LENGTH (e ++ h) > st) 
     /\ (LENGTH e < st)
     /\ (!c'. NO_DUP_PRED (MAP FST t) c')
@@ -624,11 +634,7 @@ val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j
     /\ (j2 = state (nba, t, np, [], e, nh)))) `; 
                   
 
-val less_than_quota_def = Define `
-                 (less_than_quota qu [] l = T)
-              /\ (less_than_quota qu (h ::tl ) l = (if (get_cand_tally h l < qu) 
-                                                         then less_than_quota qu tl l
-                                                    else F)) `; 
+
 
 (*to find the weakest candidate in a non-empty list of continuing candidates*)   
 val find_weakest_cand_def = Define `
