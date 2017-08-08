@@ -12,7 +12,7 @@ open satTheory
             
            
 val _ = new_theory "test" ; 
-               
+                
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -510,28 +510,98 @@ val EQE_IMP_REMOVE_ONE_CAND = Q.store_thm ("EQE_IMP_REMOVE_ONE_CAND",
              >> rfs [remove_one_cand_def]);   
  
  
+val APPEND_NIL_LEFT = Q.store_thm ("APPEND_NIL_LEFT", 
+                                                `!l. [] ++ l = l `,
+                                                       STRIP_TAC >> EVAL_TAC) ;  
 
+val APPEND_NIL_LEFT_COR = Q.store_thm("APPEND_NIL_lEFT_COR", 
+                                             `!h t. [] ++ (h::t) = h::t `,
+                                                   rw[APPEND_NIL_LEFT]) ;
  
 
-`!l t c (x: rat). (NO_DUP_PRED (MAP FST t) c) /\ (MEM (c,x) t) ==> 
-            (get_cand_tally c t = x) `
- 
- 
-Induct_on `t`  
+
+val MAP_APPEND_TRIO = Q.store_thm ("MAP_APPEND_TRIO",
+  `!t l1 l0 l2. (t = l1 ++ [l0] ++ l2) ==> (MAP FST t = (MAP FST l1) ++ [FST l0] ++ (MAP FST l2))`,
+
+     REPEAT STRIP_TAC
+          >> `l1 ++ [l0] ++ l2 = l1 ++([l0] ++ l2)` by FULL_SIMP_TAC list_ss [APPEND_ASSOC]  
+            >> RW_TAC bool_ss []  
+              >> rfs [MAP_APPEND]);
    
-   rw[]
+ 
+val NoDupCand_BOTH_SIDES= Q.store_thm ("NoDupCand_BOTH_SIDES",
+ `!l1 l2 (c:Cand) (h1: Cand list) h2. (l1 ++ [c] ++ l2 = h1 ++ [c] ++ h2) 
+                                      /\ (~ MEM c h1) /\ (~ MEM c h2) ==> (~ MEM c l1) `,
+
+    Induct_on `l1`
+         >- rw []
+         >- ((REPEAT STRIP_TAC 
+           >> ASSUME_TAC CAND_EQ_DEC 
+              >> first_assum (qspecl_then [`c`,`h`] strip_assume_tac))   
+                  >- ((ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy) 
+                    >> first_assum (qspecl_then [`h1`] strip_assume_tac))   
+                       >- (FULL_SIMP_TAC list_ss [CONS_11,MEM_APPEND] 
+                        >> `l1++ [h]++ l2 = l1 ++ ([h]++l2)` by metis_tac[APPEND_ASSOC] 
+                           >> RW_TAC bool_ss [] 
+                              >> FULL_SIMP_TAC list_ss []) 
+                       >- FULL_SIMP_TAC list_ss [list_11])
+                  >- ((ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] list_nchotomy) 
+                     >> first_assum (qspecl_then [`h1`] strip_assume_tac))
+                        >- FULL_SIMP_TAC list_ss [CONS_11]
+                        >- (FULL_SIMP_TAC list_ss [list_11] 
+                          >> first_assum (qspecl_then [`l2`,`c`,`t`,`h2`] strip_assume_tac) 
+                            >> METIS_TAC [])))) ;
+              
+ 
+val get_cand_tally_APPEND = Q.store_thm ("get_cand_tally_APPEND",
+  `!(l1: (Cand #rat) list) l2 c. (~ MEM c (MAP FST l1)) 
+                                  ==> (get_cand_tally c (l1++l2) = get_cand_tally c l2) `,
+
+      Induct_on `l1`
+           >- rw[APPEND_NIL,get_cand_tally_def]
+           >- (REPEAT STRIP_TAC >> FULL_SIMP_TAC list_ss [MEM,MAP,get_cand_tally_def])) ;  
+ 
+ 
+
+
+
+val EVERY_CAND_HAS_ONE_TALLY = Q.store_thm ("EVERY_CAND_HAS_ONE_TALLY",
+  `!l t c (x: rat). (NO_DUP_PRED (MAP FST t) c) /\ (MEM (c,x) t) ==> (get_cand_tally c t = x) `,
+ 
+      (REPEAT STRIP_TAC 
+           >> FULL_SIMP_TAC list_ss [MEM_SPLIT]  
+             >> `MAP FST t = (MAP FST l1) ++ ([c] ++ (MAP FST l2))` by 
+                 rfs [MAP_APPEND_TRIO,APPEND_ASSOC,APPEND_11]   
+                   >> FULL_SIMP_TAC list_ss [NO_DUP_PRED] 
+                     >> ASSUME_TAC NoDupCand_BOTH_SIDES 
+                       >> first_assum (qspecl_then [`MAP FST l1`,`MAP FST l2`,`c`,`h1`,`h2`] 
+                          strip_assume_tac) 
+                          >> rfs [get_cand_tally_def,get_cand_tally_APPEND])); 
+ 
+ 
+
+
+ 
+       
   
-   REPEAT STRIP_TAC
-   
-   
-   STRIP_TAC ASSUME_TAC CAND_EQ_DEC  
-   REPEAT STRIP_TAC  
-   first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac)   
-   
-        FULL_SIMP_TAC list_ss [NO_DUP_PRED,MAP]   
-        
-           `h = (FST h, SND h)` by rw[PAIR]  
-            `x = SND h`  rfs [PAIR_EQ]  
+           
+  
+
+
+
+           
+
+
+         
+             
+                     
+                     
+
+
+
+
+
+  
        
 
     
@@ -578,13 +648,7 @@ val is_weakest_cand_def = Define `
    
 
    
-val APPEND_NIL_LEFT = Q.store_thm ("APPEND_NIL_LEFT", 
-                                                `!l. [] ++ l = l `,
-                                                       STRIP_TAC >> EVAL_TAC) ;  
 
-val APPEND_NIL_LEFT_COR = Q.store_thm("APPEND_NIL_lEFT_COR", 
-                                             `!h t. [] ++ (h::t) = h::t `,
-                                                   rw[APPEND_NIL_LEFT]) ;
    
 val APPEND_EQ_NIL = Q.store_thm ("APPEND_EQ_NIL",
     `!l1 l2. ([] = l1 ++ l2) ==> ((l1 = []) /\ (l2 = [])) `,
