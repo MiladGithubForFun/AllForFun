@@ -620,11 +620,53 @@ val less_than_qu_IMP_LogicalLessThanQuota = Q.store_thm ("less_than_qu_IMP_Logic
              >- (first_assum (qspecl_then [`t0`,`t1`,`qu`] strip_assume_tac) 
                >> rfs [less_than_quota_def,Valid_CandTally_DEC2_def])));
   
+
+*----------------------------------------------*
+* the following is a stronger version of a theorem proved already above*
+*----------------------------------------------*
+ 
+val GET_CAND_TALLY_MEM2 = Q.store_thm ("GET_CAND_TALLY_MEM",
+ `!(t: (Cand #rat) list) c. (MEM c (MAP FST t)) 
+                                    ==> (MEM (c, get_cand_tally c t) t) `, 
+   
+    Induct_on `t`
+        >- rw []
+        >- (EVAL_TAC 
+          >> REPEAT STRIP_TAC >> rw []));
+        
+
+  
+
+
+
+
  
   
-       
+val LogicalLessThanQu_IMP_less_than_quota =Q.store_thm ("LogicalLessThanQu_IMP_less_than_quota",
+  `!(qu:rat) t h. (!c. (MEM c h) ==> ?x. (MEM (c,x) t) 
+                                       /\ (x < qu)) /\ (!c'. NO_DUP_PRED (MAP FST t) c')
+                                       /\ (!c''. (MEM c'' h) ==> (MEM c'' (MAP FST t)))
+                                   ==> (less_than_quota qu h t)`,
+  
+   Induct_on `h`
+     >- rw [less_than_quota_def]       
+     >- (REPEAT STRIP_TAC  
+       >> rw[less_than_quota_def] 
+         >> `?x. (MEM (h',x) t) /\ (x < qu)` by metis_tac[MEM] 
+           >> `MEM h' (MAP FST t)` by metis_tac[MEM] 
+             >> `MEM (h', get_cand_tally h' t) t` by metis_tac[GET_CAND_TALLY_MEM2] 
+               >> ASSUME_TAC EVERY_CAND_HAS_ONE_TALLY 
+                 >> `get_cand_tally h' t = x` by rfs []
+                   >> metis_tac []));  
+
 
     
+
+
+
+
+
+   
           
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
