@@ -8,9 +8,9 @@ open bossLib
 open fracTheory 
 open listLib 
 open satTheory 
-;   
-            
-           
+;    
+
+       
 val _ = new_theory "test" ; 
                 
 val _ = Hol_datatype ` Cand = cand of string ` ; 
@@ -582,32 +582,45 @@ val less_than_quota_def = Define `
                                                          then less_than_quota qu tl l
                                                     else F)) `; 
  
- 
-       
   
-           
+ 
+val LESS_THAN_QUOTA_OK = Q.store_thm ("LESS_THAN_QUOTA_OK",
+`!qu t0 t1 h. (less_than_quota qu h (t0::t1)) ==> (!c.(MEM c h) ==> (get_cand_tally c (t0::t1) < qu))`,
+      
+    Induct_on `h`
+       >- rw []
+       >- (REPEAT STRIP_TAC 
+         >> FULL_SIMP_TAC list_ss [MEM,less_than_quota_def,get_cand_tally_def]));
+  
+
+  
+
+
+            
+val less_than_qu_IMP_LogicalLessThanQuota = Q.store_thm ("less_than_qu_IMP_LogicalLess_ThanQuota",
  `!h t0 t1 (qu:rat). (less_than_quota qu h (t0::t1)) /\ (Valid_CandTally_DEC2 (t0::t1) h) ==> 
-         (!c. (MEM c h) ==> ?x. (MEM (c,x) (t0::t1)) /\ (x < qu))` 
+           (!c. (MEM c h) ==> ?x. (MEM (c,x) (t0::t1)) /\ (x < qu))`, 
+  
+       Induct_on `h`
+          >- rw []
+          >- ((REPEAT STRIP_TAC 
+            >> FULL_SIMP_TAC bool_ss [MEM])
+             >- ((ASSUME_TAC CandTally_DEC2_IMP_CandTally 
+                >> first_x_assum (qspecl_then [`h'::h`,`t0::t1`] strip_assume_tac) 
+                  >> `!c. MEM c (h'::h) ==> (MEM c (MAP FST (t0::t1))) ` by metis_tac [] 
+                    >> ASSUME_TAC GET_CAND_TALLY_MEM_def 
+                      >> first_assum (qspecl_then [`h'`] strip_assume_tac) 
+                        >> first_assum (qspecl_then [`t0`,`t1`,`h'`] strip_assume_tac) >> rfs[]) 
+                          >- (qexists_tac `get_cand_tally h' (t0::t1)` 
+                            >> rfs [less_than_quota_def])            
+                          >- (qexists_tac `get_cand_tally h' (t0::t1)` 
+                            >> rw [] >> ASSUME_TAC LESS_THAN_QUOTA_OK 
+                              >> first_x_assum (qspecl_then [`qu`,`t0`,`t1`,`c::h`] strip_assume_tac) 
+                                >> rfs []))
+             >- (first_assum (qspecl_then [`t0`,`t1`,`qu`] strip_assume_tac) 
+               >> rfs [less_than_quota_def,Valid_CandTally_DEC2_def])));
+  
  
-Induct_on `h`
- 
-  rw [] 
-
-  REPEAT STRIP_TAC  
-  `?t0 t1. (t = t0::t1)` by metis_tac[list_nchotomy] 
-  FULL_SIMP_TAC list_ss [MEM]           
-    
-    rfs [less_than_quota_def]
-
-         
-             
-                     
-                     
-
-
-
-
-
   
        
 
