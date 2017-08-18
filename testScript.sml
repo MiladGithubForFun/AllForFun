@@ -12,7 +12,7 @@ open satTheory
  
        
 val _ = new_theory "test" ; 
-                  
+                     
 val _ = Hol_datatype ` Cand = cand of string ` ; 
   
 val _ = Hol_datatype `judgement =  
@@ -170,7 +170,7 @@ val GET_CAND_TALLY_MEM2 = Q.store_thm ("GET_CAND_TALLY_MEM",
         >- (EVAL_TAC 
           >> REPEAT STRIP_TAC >> rw []));
  
-  
+   
 *------------------------------------------*
 val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
  `!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) 
@@ -202,8 +202,8 @@ val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
                       >> RW_TAC bool_ss [GET_CAND_TALLY_HEAD_REMOVAL_def]))));
     
 *---------------------------------------------------*
-         
- 
+           
+  
 val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
    `!l  (t: (Cand # rat) list) c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `,                           
  
@@ -720,8 +720,8 @@ val Logical_bigger_than_cand_IMP_TheFunctional = Q.store_thm ("Logical_bigger_th
                       >> `y = get_cand_tally h' t ` by rfs [] 
                        >> RW_TAC bool_ss [])); 
  
-
- 
+  
+  
 val subpile1_def = Define `
         (subpile1 c ([]: (Cand # (((Cand list) # rat) list)) list) p2 = T)
      /\ (subpile1 c (p0::ps) p2 = if (c = FST p0) then (MEM (c,[]) p2) /\ (subpile1 c ps p2)
@@ -741,6 +741,9 @@ val SUBPILE_ONE_HEAD_REMOVAL = Q.store_thm ("SUBPILE_ONE_HEAD_REMOVAL",
             >> metis_tac [subpile1_def]));  
    
 
+
+
+
    
 val Functional_subpile1_IMP_TheLogical = Q.store_thm ("Functional_subpile1_IMP_TheLogical",
  `!p1 p2 c. (subpile1 c p1 p2) ==>  (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p1 ==> MEM (d',l) p2))))`,
@@ -754,7 +757,338 @@ val Functional_subpile1_IMP_TheLogical = Q.store_thm ("Functional_subpile1_IMP_T
                 >> FULL_SIMP_TAC list_ss [subpile1_def])  
             >- (first_assum (qspecl_then [`p2`,`c`] strip_assume_tac) 
               >> metis_tac[SUBPILE_ONE_HEAD_REMOVAL])));     
+ 
+
+val GET_CAND_PILE_MEM = Q.store_thm ("GET_CAND_PILE_MEM",
+ `!(p:(Cand # (((Cand list) # rat) list)) list) c. (MEM c (MAP FST p)) 
+                          ==> (MEM (c,get_cand_pile c p) p)`, 
+
+        Induct_on `p`
+             >- rw []
+             >- (EVAL_TAC 
+               >> REPEAT STRIP_TAC 
+                  >> REPEAT (RW_TAC list_ss [])));
+
+
+val get_cand_pile_APPEND = Q.store_thm ("get_cand_pile_APPEND",
+ `! (l1:(Cand # (((Cand list) # rat) list)) list) l2 c. (~ MEM c (MAP FST l1))
+                           ==> (get_cand_pile c (l1++l2) = get_cand_pile c l2)`, 
+
+     Induct_on `l1`
+        >- rw []
+        >- (REPEAT STRIP_TAC >> FULL_SIMP_TAC list_ss [MEM,MAP,get_cand_pile_def]));
+ 
+ 
+
+
+val EVERY_CAND_HAS_ONE_PILE = Q.store_thm ("EVERY_CAND_HAS_ONE_PILE",
+ `! p c (y: ((Cand list) # rat) list). (NO_DUP_PRED (MAP FST p) c) /\ (MEM (c,y) p) 
+                          ==> (get_cand_pile c p = y)`,
+  
+      (REPEAT STRIP_TAC
+         >> FULL_SIMP_TAC list_ss [MEM_SPLIT]  
+           >> `MAP FST p = (MAP FST l1) ++ ([c] ++ (MAP FST l2))`
+                by rfs [MAP_APPEND_TRIO,APPEND_ASSOC,APPEND_11]   
+              >> FULL_SIMP_TAC list_ss [NO_DUP_PRED]
+                >> ASSUME_TAC NoDupCand_BOTH_SIDES    
+                  >> first_assum (qspecl_then [`MAP FST l1`,`MAP FST l2`,`c`,`h1`,`h2`] strip_assume_tac) 
+                    >> `~ MEM c (MAP FST l1)` by metis_tac []  
+                      >> ASSUME_TAC get_cand_pile_APPEND  
+                        >> FULL_SIMP_TAC list_ss [get_cand_pile_def])); 
+       
+
+
+
+
+
+
    
+val Subpile_def = Define `
+      (Subpile c  ([]: (Cand # (((Cand list) # rat) list)) list) p2 = T)
+   /\ (Subpile c p1  ([]: (Cand # (((Cand list) # rat) list)) list) = T)
+   /\ (Subpile c (p0::ps) (p0'::ps') =
+        if (FST p0 = FST p0') then
+          if (c = FST p0) then (Subpile c ps ps')
+          else (SND p0 = SND p0') /\ (Subpile c ps ps')
+        else if (FST p0 = c) then
+                 (MEM p0' ps) /\ (Subpile c ps ps')
+             else if (FST p0' = c) then
+                    (MEM p0 ps') /\ (Subpile c ps ps')
+                  else (MEM p0 ps') /\ (MEM p0' ps) /\ (Subpile c ps ps')) `;
+ 
+  
+  
+`! p1 p2 c. (!c'. NO_DUP_PRED (MAP FST p1) c') /\ (!c''. NO_DUP_PRED (MAP FST p2) c'') 
+                /\ (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p1 ==> MEM (d',l) p2)) 
+                                     /\ (!l. (MEM (d',l) p2 ==> MEM (d',l) p1)))) 
+                 ==> (Subpile c p1 p2) `
+ 
+             
+Induct_on `p1`        
+        
+  rw [Subpile_def]  
+             
+  Induct_on `p2`
+            
+    rw [Subpile_def]
+              
+    (REPEAT STRIP_TAC >>        
+    ASSUME_TAC CAND_EQ_DEC >>            
+    first_assum (qspecl_then [`FST h'`,`FST h`] strip_assume_tac) >>
+           
+      first_x_assum (qspecl_then [`FST h'`,`c`] strip_assume_tac)   
+          
+          `!d. (d <> c) ==> (!l. (MEM (d,l) p1) <=> (MEM (d,l) p2))` by  
+             (REPEAT STRIP_TAC >> 
+             `!l. (MEM (d,l) (h'::p1)) <=> (MEM (d,l) (h::p2))` by metis_tac [] >> 
+             first_assum (qspecl_then [`l`] strip_assume_tac) >>
+             `d = FST (d,l)` by RW_TAC bool_ss [FST] >>            
+             `h' <> (d,l)` by (STRIP_TAC >> FULL_SIMP_TAC list_ss [FST]) >>
+             `h <> (d,l)` by (STRIP_TAC >> FULL_SIMP_TAC list_ss [FST])  >> 
+             metis_tac[MEM]) 
+          rw [Subpile_def]     
+          `!c'. NO_DUP_PRED (MAP FST p1) c'` by metis_tac [MAP,NO_DUP_TAIL_ONE_CAND]    
+          `!c''. NO_DUP_PRED (MAP FST p2) c''` by metis_tac [MAP,NO_DUP_TAIL_ONE_CAND]
+          metis_tac []          
+      
+      rw[Subpile_def]   
+      `!l. MEM (FST h',l) (h'::p1) <=> MEM (FST h',l) (h::p2)` by metis_tac []  
+      `MEM (FST h',SND h') (h::p2)` by 
+          (first_assum (qspecl_then [`SND h'`] strip_assume_tac) >>
+          metis_tac [MEM,PAIR])    
+      ASSUME_TAC (INST_TYPE [alpha |-> ``:(Cand # (((Cand list) # rat) list)) ``] MEM_SPLIT) >>  
+      first_assum (qspecl_then [`(FST h',SND h')`,`h::p2`] strip_assume_tac) >>       
+      `?l1 l2. h::p2 = l1 ++ (FST h',SND h') :: l2` by metis_tac [] >>   
+      `MEM h (h::p2)` by metis_tac [MEM]               
+      `!h''. MEM h'' (h::p2) <=> MEM h'' (l1 ++ (FST h',SND h') :: l2)` 
+         by FULL_SIMP_TAC bool_ss []  
+      `MEM h (l1 ++ (FST h',SND h') ::l2)` by metis_tac []            
+      `~ MEM h l1` 
+          STRIP_TAC  
+          first_assum (qspecl_then [`h`,`l1`] strip_assume_tac)                     
+          `?l1' l2'. l1 = l1' ++ h:: l2'` by metis_tac []    
+          `h::p2 = (l1' ++ h :: l2') ++ (FST h', SND h')::l2` by RW_TAC bool_ss [] 
+          `NO_DUP_PRED (MAP FST (h::p2)) (FST h)` by metis_tac [] 
+          ASSUME_TAC NO_DUP_PRED_to_no_dup
+          `no_dup (MAP FST (h::p2))` by metis_tac []                     
+          `no_dup (MAP FST (l1' ++ h::l2' ++ (FST h',SND h')::l2))` by metis_tac [] 
+          `!(L1:(Cand # (((Cand list) # rat) list)) list) L2 L3 
+            (h1:(Cand # (((Cand list) # rat) list))) h2. 
+            MAP FST (L1++ h1::L2 ++ (FST h2,SND h2)::L3) = (MAP FST L1) ++ 
+            (FST h1)::(MAP FST L2)++(FST h2)::(MAP FST L3)` by
+               (REPEAT STRIP_TAC >> FULL_SIMP_TAC list_ss [])
+          `no_dup (MAP FST l1' ++ (FST h)::(MAP FST l2') ++ (FST h')::(MAP FST l2))`                     
+           by metis_tac []  
+           `!(L1:(Cand # (((Cand list) # rat) list)) list) 
+            (L2:(Cand # (((Cand list) # rat) list)) list) (L3:(Cand # (((Cand list) # rat) list)) list)
+            (h1:(Cand # (((Cand list) # rat) list))). 
+            (no_dup (MAP FST L1 ++ (FST h1)::(MAP FST L2) ++(FST h1)::(MAP FST L3)) = F)` 
+                Induct_on `L1`  
+                       
+                   REPEAT STRIP_TAC RW_TAC bool_ss [MAP,FST,APPEND_NIL_LEFT]  
+                   FULL_SIMP_TAC list_ss [no_dup,not_elem] DISJ1_TAC   
+                   `!G1 G2 (c: Cand). (not_elem c (G1++G2) = (not_elem c G1) /\ (not_elem c G2))`
+                    Induct_on `G1` 
+                     
+                      FULL_SIMP_TAC list_ss [APPEND_NIL_LEFT,not_elem]
+                         
+                      ASSUME_TAC CAND_EQ_DEC 
+                      REPEAT STRIP_TAC    
+                      first_x_assum (qspecl_then [`c'`,`h''`] strip_assume_tac)
+    
+                           FULL_SIMP_TAC list_ss [not_elem]
+    
+                           FULL_SIMP_TAC list_ss [not_elem]
+                   FULL_SIMP_TAC list_ss [not_elem] (*first subgoal solved induct on L1*)        
+   
+                   REPEAT STRIP_TAC 
+                   ASSUME_TAC CAND_EQ_DEC   
+                   first_x_assum (qspecl_then [`FST h''`,`FST h1`] strip_assume_tac)
+    
+                       FULL_SIMP_TAC list_ss [MAP,no_dup,not_elem]
+                         
+                       rw[MAP] 
+                       `(MEM (FST h'') (MAP FST L1 ++ FST h1::MAP FST L2++ FST h1:: MAP FST L3)) \/
+                        ~ (MEM (FST h'') (MAP FST L1 ++ FST h1::MAP FST L2 ++ FST h1:: MAP FST L3))`
+                        by  metis_tac[MEM_SPLIT]
+                          
+                          FULL_SIMP_TAC list_ss [no_dup,not_elem,not_elem_NOT_MEM]
+                           
+                          FULL_SIMP_TAC list_ss [no_dup,not_elem]
+    
+           first_x_assum (qspecl_then [`l1'`,`l2'`,`l2`,`h`,`h'`] strip_assume_tac)
+           first_assum (qspecl_then [`l1'`,`l2'`,`l2`,`h`] strip_assume_tac)  
+           metis_tac [] (*end proof for ~ MEM h l1 *)
+ 
+       ASSUME_TAC (INST_TYPE [alpha |-> ``:(Cand # (((Cand list) # rat) list)) list  ``] list_nchotomy)
+       first_x_assum(qspecl_then [`l1`] strip_assume_tac)
+       `(l1 = []) \/ (?g G. (l1 = g::G))` by RW_TAC bool_ss [list_nchotomy]
+           
+              FULL_SIMP_TAC list_ss [APPEND_NIL_LEFT] 
+  
+              FULL_SIMP_TAC list_ss [CONS_11,MEM] (*end of proof for SND h = SND h' *)
+   
+   `!d. (d <> c) ==>(!l. (MEM (d,l) p1 ==> MEM (d,l) p2))`
+      REPEAT STRIP_TAC 
+      `(d,l) <> h'` (STRIP_TAC  
+     `? l1 l2. p1 =l1 ++(d,l)::l2` by metis_tac[MEM_SPLIT] 
+     `NO_DUP_PRED (MAP FST ((d,l)::(l1 ++ (d,l)::l2))) d` by metis_tac []      
+     ASSUME_TAC NO_DUP_PRED_to_no_dup 
+     `MAP FST p1 = MAP FST l1 ++ d::MAP FST l2` by (RW_TAC bool_ss [] >> rfs[]) 
+     `no_dup (d:: (MAP FST l1 ++ d:: MAP FST l2))` by metis_tac [MAP,FST] 
+     `no_dup (d:: (MAP FST l1 ++ d:: MAP FST l2)) = F` by
+        FULL_SIMP_TAC list_ss [no_dup,not_elem]
+        `!G1 G2 (c: Cand). (not_elem c (G1++G2) = (not_elem c G1) /\ (not_elem c G2))`
+                    Induct_on `G1` 
+                        
+                      FULL_SIMP_TAC list_ss [APPEND_NIL_LEFT,not_elem]
+                           
+                      ASSUME_TAC CAND_EQ_DEC 
+                      REPEAT STRIP_TAC    
+                      first_x_assum (qspecl_then [`c'`,`h''`] strip_assume_tac)
+      
+                           FULL_SIMP_TAC list_ss [not_elem]
+      
+                           FULL_SIMP_TAC list_ss [not_elem]
+            
+         first_assum (qspecl_then [`MAP FST l1`,`d::MAP FST l2`,`d`] strip_assume_tac)
+         `(not_elem d (MAP FST l1)) /\ (not_elem d (d:: MAP FST l2))` by metis_tac [not_elem] 
+         `not_elem d (d:: MAP FST l2) = F` by metis_tac [not_elem]
+          FULL_SIMP_TAC list_ss [] 
+          metis_tac []) (*end of proof that (d,l) <> h'*)
+     
+     `(d,l) <> h` STRIP_TAC  
+       `MEM (d,l) p1` by FULL_SIMP_TAC list_ss [MEM]   
+       `? l1 l2. p1 =l1 ++(d,l)::l2` by metis_tac[MEM_SPLIT]   
+       `MAP FST p1 = MAP FST l1 ++ d::MAP FST l2` by (RW_TAC bool_ss [] >> rfs[]) 
+       `MAP FST (h'::p1) = d::(MAP FST l1 ++ d::MAP FST l2)` by (RW_TAC bool_ss [] >> rfs[])                        `no_dup (d::(MAP FST l1 ++ d::MAP FST l2))` by metis_tac [NO_DUP_PRED_to_no_dup]  
+       FULL_SIMP_TAC list_ss [no_dup,not_elem]
+       `!G1 G2 (c: Cand). (not_elem c (G1++G2) = (not_elem c G1) /\ (not_elem c G2))`
+                    Induct_on `G1` 
+                         
+                      FULL_SIMP_TAC list_ss [APPEND_NIL_LEFT,not_elem]
+                            
+                      ASSUME_TAC CAND_EQ_DEC 
+                      REPEAT STRIP_TAC    
+                      first_x_assum (qspecl_then [`c'`,`h''`] strip_assume_tac)
+       
+                           FULL_SIMP_TAC list_ss [not_elem]
+       
+                           FULL_SIMP_TAC list_ss [not_elem]
+         
+         `not_elem d (MAP FST l1 ++ d:: MAP FST l2) = F` by metis_tac [not_elem]      
+         metis_tac [] (*end of proof that (d,l) <> h*)
+ 
+    metis_tac [MEM] (*end of subgoal that elements of p1 are all in p2 except c*)
+    
+    `!d. (d <> c) ==> (!l. MEM (d,l) p2 ==> (MEM (d,l) p1))`
+       REPEAT STRIP_TAC
+       `(d,l) <> h` 
+         STRIP_TAC 
+          `? l1 l2. p2 =l1 ++(d,l)::l2` by metis_tac[MEM_SPLIT]
+           `NO_DUP_PRED (MAP FST ((d,l)::(l1 ++ (d,l)::l2))) d` by metis_tac [] 
+            ASSUME_TAC NO_DUP_PRED_to_no_dup
+            `MAP FST p2 = MAP FST l1 ++ d::MAP FST l2` by (RW_TAC bool_ss [] >> rfs[]) 
+            `no_dup (d:: (MAP FST l1 ++ d:: MAP FST l2))` by metis_tac [MAP,FST]
+            `no_dup (d:: (MAP FST l1 ++ d:: MAP FST l2)) = F` by
+             FULL_SIMP_TAC list_ss [no_dup,not_elem]
+             `!G1 G2 (c: Cand). (not_elem c (G1++G2) = (not_elem c G1) /\ (not_elem c G2))`
+                    Induct_on `G1` 
+                         
+                      FULL_SIMP_TAC list_ss [APPEND_NIL_LEFT,not_elem]
+                             
+                      ASSUME_TAC CAND_EQ_DEC 
+                      REPEAT STRIP_TAC    
+                      first_x_assum (qspecl_then [`c'`,`h''`] strip_assume_tac)
+       
+                           FULL_SIMP_TAC list_ss [not_elem]
+       
+                           FULL_SIMP_TAC list_ss [not_elem]
+          first_assum (qspecl_then [`MAP FST l1`,`d::MAP FST l2`,`d`] strip_assume_tac)
+         `(not_elem d (MAP FST l1)) /\ (not_elem d (d:: MAP FST l2))` by metis_tac [not_elem] 
+         `not_elem d (d:: MAP FST l2) = F` by metis_tac [not_elem]
+          FULL_SIMP_TAC list_ss [] 
+          metis_tac []) (*end of proof that (d,l) <> h*)
+     
+
+    `(d,l) <> h'` STRIP_TAC    
+       `MEM (d,l) p2` by FULL_SIMP_TAC list_ss [MEM]    
+       `? l1 l2. p2 =l1 ++(d,l)::l2` by metis_tac[MEM_SPLIT]   
+       `MAP FST p2 = MAP FST l1 ++ d::MAP FST l2` by (RW_TAC bool_ss [] >> rfs[]) 
+       `MAP FST (h::p2) = d::(MAP FST l1 ++ d::MAP FST l2)` by (RW_TAC bool_ss [] >> rfs[])                        `no_dup (d::(MAP FST l1 ++ d::MAP FST l2))` by metis_tac [NO_DUP_PRED_to_no_dup]  
+       FULL_SIMP_TAC list_ss [no_dup,not_elem]
+       `!G1 G2 (c: Cand). (not_elem c (G1++G2) = (not_elem c G1) /\ (not_elem c G2))`
+                    Induct_on `G1` 
+                         
+                      FULL_SIMP_TAC list_ss [APPEND_NIL_LEFT,not_elem]
+                            
+                      ASSUME_TAC CAND_EQ_DEC 
+                      REPEAT STRIP_TAC    
+                      first_x_assum (qspecl_then [`c'`,`h''`] strip_assume_tac)
+       
+                           FULL_SIMP_TAC list_ss [not_elem]
+       
+                           FULL_SIMP_TAC list_ss [not_elem]
+             
+         first_assum (qspecl_then [`MAP FST l1`,`d::MAP FST l2`,`d`] strip_assume_tac)
+         `(not_elem d (MAP FST l1)) /\ (not_elem d (d:: MAP FST l2))` by metis_tac [not_elem] 
+         `not_elem d (d:: MAP FST l2) = F` by metis_tac [not_elem]
+          FULL_SIMP_TAC list_ss [] 
+          metis_tac []) (*end of proof that (d,l) <> h'*) 
+       
+    metis_tac [MEM] (*end of proof that members of p2 are in p1*)
+
+    metis_tac [] (*end of proof for when FST h' = FST h*)
+
+
+ rw[Subpile_def] 
+   
+      `h' <> h` STRIP_TAC RW_TAC bool_ss [PAIR_EQ] 
+       
+       
+
+
+
+
+
+
+                          
+     
+
+
+
+
+
+
+
+
+
+
+
+
+   
+     
+
+        
+
+
+
+
+ 
+           
+
+
+
+
+
+
+
+
+
+
+
+
+ 
   
 val Logical_subpile1_IMP_TheFunctional = Q.store_thm ("Logical_subpile1_IMP_TheFunctional",
  `! p1 p2 c. (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p1 ==> MEM (d',l) p2))) 
