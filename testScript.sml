@@ -721,7 +721,7 @@ val Logical_bigger_than_cand_IMP_TheFunctional = Q.store_thm ("Logical_bigger_th
                        >> RW_TAC bool_ss [])); 
  
   
-  
+
 val subpile1_def = Define `
         (subpile1 c ([]: (Cand # (((Cand list) # rat) list)) list) p2 = T)
      /\ (subpile1 c (p0::ps) p2 = if (c = FST p0) then (MEM (c,[]) p2) /\ (subpile1 c ps p2)
@@ -757,7 +757,7 @@ val Functional_subpile1_IMP_TheLogical = Q.store_thm ("Functional_subpile1_IMP_T
                 >> FULL_SIMP_TAC list_ss [subpile1_def])  
             >- (first_assum (qspecl_then [`p2`,`c`] strip_assume_tac) 
               >> metis_tac[SUBPILE_ONE_HEAD_REMOVAL])));     
- 
+  
 
 val GET_CAND_PILE_MEM = Q.store_thm ("GET_CAND_PILE_MEM",
  `!(p:(Cand # (((Cand list) # rat) list)) list) c. (MEM c (MAP FST p)) 
@@ -768,7 +768,7 @@ val GET_CAND_PILE_MEM = Q.store_thm ("GET_CAND_PILE_MEM",
              >- (EVAL_TAC 
                >> REPEAT STRIP_TAC 
                   >> REPEAT (RW_TAC list_ss [])));
-
+ 
 
 val get_cand_pile_APPEND = Q.store_thm ("get_cand_pile_APPEND",
  `! (l1:(Cand # (((Cand list) # rat) list)) list) l2 c. (~ MEM c (MAP FST l1))
@@ -779,7 +779,6 @@ val get_cand_pile_APPEND = Q.store_thm ("get_cand_pile_APPEND",
         >- (REPEAT STRIP_TAC >> FULL_SIMP_TAC list_ss [MEM,MAP,get_cand_pile_def]));
  
  
-
 
 val EVERY_CAND_HAS_ONE_PILE = Q.store_thm ("EVERY_CAND_HAS_ONE_PILE",
  `! p c (y: ((Cand list) # rat) list). (NO_DUP_PRED (MAP FST p) c) /\ (MEM (c,y) p) 
@@ -795,7 +794,221 @@ val EVERY_CAND_HAS_ONE_PILE = Q.store_thm ("EVERY_CAND_HAS_ONE_PILE",
                     >> `~ MEM c (MAP FST l1)` by metis_tac []  
                       >> ASSUME_TAC get_cand_pile_APPEND  
                         >> FULL_SIMP_TAC list_ss [get_cand_pile_def])); 
-       
+        
+
+  
+val Logical_subpile1_IMP_TheFunctional = Q.store_thm ("Logical_subpile1_IMP_TheFunctional",
+ `! p1 p2 c. (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p1 ==> MEM (d',l) p2))) 
+                /\ ((d' = c) ==> (MEM (c,[]) p2))) ==> (subpile1 c p1 p2)`, 
+
+         Induct_on `p1` 
+           >- rw[subpile1_def]   
+           >- ((REPEAT STRIP_TAC
+             >> rw[subpile1_def]  
+               >> ASSUME_TAC CAND_EQ_DEC
+                 >> first_x_assum (qspecl_then [`c`,`FST h`] strip_assume_tac))
+                   >- RW_TAC bool_ss [] 
+                   >- (first_assum (qspecl_then [`FST h`] strip_assume_tac)
+                     >> `!l. MEM (FST h,l) (h::p1) ==> (MEM (FST h,l) p2)` by metis_tac []
+                       >> first_assum (qspecl_then [`SND h`] strip_assume_tac)
+                         >> FULL_SIMP_TAC list_ss [MEM,PAIR]))); 
+     
+
+val subpile2_def = Define `
+      (subpile2 c ([]: (Cand # (((Cand list) # rat) list)) list) p1 = T)
+   /\ (subpile2 c (p0::ps) p1 = if (c = FST p0) then (subpile2 c ps p1)
+                                else 
+                                    if (MEM p0 p1) then (subpile2 c ps p1)
+                                    else F)`; 
+   
+ 
+val SUBPILE_TWO_HEAD_REMOVAL = Q.store_thm ("SUBPILE_TWO_HEAD_REMOVAL",
+ `!p1 p2 c h. (subpile2 c (h::p2) p1) ==> (subpile2 c p2 p1) `,
+ 
+      (REPEAT STRIP_TAC
+         >> ASSUME_TAC CAND_EQ_DEC   
+           >> first_x_assum (qspecl_then [`c`,`FST h`] strip_assume_tac))
+              >- FULL_SIMP_TAC list_ss [subpile2_def]
+              >- metis_tac [subpile2_def]);
+   
+ 
+val Functional_subpile2_IMP_TheLogical = Q.store_thm ("Functional_subpile2_IMP_TheLogical",
+ `!p1 p2 c. (subpile2 c p2 p1) ==>  (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p2 ==> MEM (d',l) p1))))`,
+
+    Induct_on `p2`
+        >- rw []
+        >- ((REPEAT STRIP_TAC
+          >> FULL_SIMP_TAC bool_ss [MEM]) 
+             >- (`d' = FST h` by RW_TAC bool_ss [PAIR_EQ,FST] 
+               >> `c <> FST h` by RW_TAC bool_ss []   
+                 >>  RW_TAC bool_ss [subpile2_def]
+                   >> FULL_SIMP_TAC list_ss [subpile2_def])
+             >- (first_assum (qspecl_then [`p1`,`c`] strip_assume_tac)
+               >> metis_tac [SUBPILE_TWO_HEAD_REMOVAL])));
+  
+ 
+val subpile1_CandPile_Empty = Q.store_thm ("subpile1_CandPile_Empty",
+ `!(l: Cand list) p1 p2 c. (subpile1 c p1 p2) /\ (MEM c (MAP FST p2)) 
+                                              /\ (MEM c (MAP FST p1))  ==> (MEM (c,[]) p2)`,
+
+Induct_on `p1`
+   >- rw[]
+   >- (REPEAT STRIP_TAC  
+     >> ASSUME_TAC CAND_EQ_DEC 
+       >> first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac)
+         >> FULL_SIMP_TAC list_ss [subpile1_def]
+           >> metis_tac [subpile1_def,MAP,MEM]));
+ 
+
+ 
+ 
+val Logical_subpile2_IMP_TheFunctional = Q.store_thm ("Logical_subpile2_IMP_TheFunctional",
+ `!p1 p2 c. (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p2 ==> MEM (d',l) p1))) 
+              /\ ((d' = c) ==> (?l. MEM (c,l) p1))) ==> (subpile2 c p2 p1)`,
+
+      Induct_on `p2`          
+           >- rw[subpile2_def]
+           >- ((REPEAT STRIP_TAC   
+             >> ASSUME_TAC CAND_EQ_DEC   
+               >> first_x_assum (qspecl_then [`c`,`FST h`] strip_assume_tac))
+                 >- rw [subpile2_def]  
+                 >- (rw [subpile2_def]
+                   >> first_assum (qspecl_then [`FST h`] strip_assume_tac)
+                     >> `FST h <> c` by (STRIP_TAC >> RW_TAC bool_ss [EQ_SYM_EQ])   
+                       >> `!l. MEM (FST h,l) (h::p2) ==> MEM (FST h,l) p1` by metis_tac []      
+                         >> first_assum (qspecl_then [`SND h`] strip_assume_tac)
+                           >> FULL_SIMP_TAC bool_ss [PAIR,MEM,PAIR_EQ])));  
+            
+ 
+
+
+
+
+
+
+
+val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
+    (j1 = state ([], t, p, [], e, h))
+    /\ Valid_Init_CandList l
+    /\ (!c'. (MEM c' h) \/ (MEM c' e) ==> (MEM c' l))
+    /\ (!c'. NO_DUP_PRED h c')
+    /\ (!c'. NO_DUP_PRED e c')
+    /\ (LENGTH (e ++ h) > st) 
+    /\ (LENGTH e < st)
+    /\ (!c'. NO_DUP_PRED (MAP FST t) c')
+    /\ Valid_CandTally t l
+    /\ (!c'. (MEM c' h ==> (?x. MEM (c',x) t /\ ( x < qu))))  
+    /\ (MEM c h) 
+    /\ (!d. (MEM d h ==> (?x y. (MEM (c,x) t) /\ (MEM (d,y) t) /\ ( x <= y))))
+    /\ (eqe c nh h)
+    /\ (nba = get_cand_pile c p)
+    /\ ( MEM (c,[]) np)
+    /\ (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
+                              /\ (MEM (d',l) np ==> MEM (d',l) p))))
+    /\ (j2 = state (nba, t, np, [], e, nh)))) `; 
+                  
+
+
+
+(*to find the weakest candidate in a non-empty list of continuing candidates*)   
+val find_weakest_cand_def = Define `
+           (find_weakest_cand [h] l = h)
+        /\ (find_weakest_cand (h::h'::tl) l = (if (get_cand_tally h l <= get_cand_tally h' l)
+                                                      then find_weakest_cand (h::tl) l                                                         else find_weakest_cand (h'::tl) l)) `;
+ 
+ 
+(*checks if c is the weakest w.r.t. all the other continuing candidates*)
+val is_weakest_cand_def = Define `
+             (is_weakest_cand (c: Cand) [] l = T)
+          /\ (is_weakest_cand (c: Cand) (h::t) l = (if (get_cand_tally c l < get_cand_tally c l)
+                                                        then is_weakest_cand c t l
+                                                    else F)) `;
+
+   
+val APPEND_EQ_NIL = Q.store_thm ("APPEND_EQ_NIL",
+    `!l1 l2. ([] = l1 ++ l2) ==> ((l1 = []) /\ (l2 = [])) `,
+      Cases_on `l2`
+        >- ASM_SIMP_TAC bool_ss [APPEND_NIL]    
+        >- (Cases_on `l1` 
+          >> rw[APPEND_NIL_LEFT_COR]   
+            >> (ASM_SIMP_TAC bool_ss [NOT_NIL_CONS] 
+              >> STRIP_TAC 
+                >> rw[NOT_NIL_CONS]))) ;
+  
+val APPEND_MID_NOT_NIL = Q.store_thm ("APPEND_MID_NOT_NIL",
+       `!l1 l2 c. ([] = l1 ++([c]++l2)) = F `,
+           Induct_on `l1` 
+            >> rw[APPEND]) ;  
+    
+
+
+
+    
+           
+val Elim_def = Define `
+             (Elim st (qu : rat) ((j: judgement), winners w) = F)
+          /\ (Elim st qu (winners w, (j: judgement)) = F) 
+          /\ (Elim st qu (state (ba, t, p, bl, e, h), state (ba', t', p', bl', e',h')) = 
+                  ((empty_list ba) 
+               /\ (empty_list bl) 
+               /\ (t = t') /\ (bl = bl') /\ (e = e')
+               /\ (LENGTH (e ++ h) > st) /\ (LENGTH e < st)
+               /\ (MEM (find_weakest_cand h t) h)
+               /\ (less_than_quota qu h t)
+               /\ (h' = remove_one_cand (find_weakest_cand h t) h)
+               /\ (is_weakest_cand (find_weakest_cand h t) h t)
+               /\ (ba' = get_cand_pile (find_weakest_cand h t) p)
+               /\ (p' = empty_cand_pile (find_weakest_cand h t) p) )) `;
+                  
+`!st qu j1 j2. (Elim st qu (j1,j2) = T) ==> (elim st qu j1 j2) `
+STRIP_TAC STRIP_TAC 
+Cases_on `j1` Cases_on `j2`  Cases_on `p` Cases_on `r` Cases_on `r'` Cases_on `r` 
+Cases_on `r'` Cases_on `p'` Cases_on `r'` Cases_on `r''` Cases_on `r'` Cases_on `r''` 
+rw[Elim_def] rw[elim_def] 
+ 
+
+
+
+`!st qu j1 j2. ((elim st qu j1 j2) ==> (Elim st qu (j1, j2) = T))`                   
+
+
+   
+
+ 
+val rec Filter = fn  [] => []
+                    |(h::t) => if (no_dup (fst h)) then
+                                  if (non_empty (fst h)) 
+                                    then (h :: Filter t)
+                                  else Filter t
+                               else Filter t ; 
+                            
+                       
+val All_Tallies_Legal_def = Define `
+                               (All_Tallies_Legal (l: Cand list) [] = T)    
+                            /\ (All_Tallies_Legal l (h::t) = ((Legal_Tally_Cand l (h::t) (FST h)) 
+                                                           /\ (All_Tallies_Legal l t))) `;
+
+  
+val Legal_Init_CandList = Define `Legal_Init_CandList l t = ((l <> []) /\ (MAP FST t = l))`;
+
+    
+`!l t. ((t <> []) /\ (All_Tallies_Legal l t = T)) ==> (!c. (MEM c l) ==> (Legal_Tally_Cand l t c = T)) `
+        
+ Induct_on `t`
+ 
+   rw []
+ 
+   REPEAT STRIP_TAC ASSUME_TAC CAND_EQ_DEC first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac) 
+   
+        FULL_SIMP_TAC bool_ss [Legal_Tally_Cand_def,All_Tallies_Legal_def]  
+    
+        rw [Legal_Tally_Cand_def] FULL_SIMP_TAC bool_ss [All_Tallies_Legal_def]
+        Induct_on `t`  
+        
+               rw [] 
+
+
+
 
 
 
@@ -1045,268 +1258,3 @@ Induct_on `p1`
    
       `h' <> h` STRIP_TAC RW_TAC bool_ss [PAIR_EQ] 
        
-       
-
-
-
-
-
-
-                          
-     
-
-
-
-
-
-
-
-
-
-
-
-
-   
-     
-
-        
-
-
-
-
- 
-           
-
-
-
-
-
-
-
-
-
-
-
-
- 
-  
-val Logical_subpile1_IMP_TheFunctional = Q.store_thm ("Logical_subpile1_IMP_TheFunctional",
- `! p1 p2 c. (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p1 ==> MEM (d',l) p2))) 
-                /\ ((d' = c) ==> (MEM (c,[]) p2))) ==> (subpile1 c p1 p2)`, 
-
-         Induct_on `p1` 
-           >- rw[subpile1_def]   
-           >- ((REPEAT STRIP_TAC
-             >> rw[subpile1_def]  
-               >> ASSUME_TAC CAND_EQ_DEC
-                 >> first_x_assum (qspecl_then [`c`,`FST h`] strip_assume_tac))
-                   >- RW_TAC bool_ss [] 
-                   >- (first_assum (qspecl_then [`FST h`] strip_assume_tac)
-                     >> `!l. MEM (FST h,l) (h::p1) ==> (MEM (FST h,l) p2)` by metis_tac []
-                       >> first_assum (qspecl_then [`SND h`] strip_assume_tac)
-                         >> FULL_SIMP_TAC list_ss [MEM,PAIR]))); 
-   
-
-val subpile2_def = Define `
-      (subpile2 c ([]: (Cand # (((Cand list) # rat) list)) list) p1 = T)
-   /\ (subpile2 c (p0::ps) p1 = if (c = FST p0) then ([] = (SND p0)) /\ (subpile2 c ps p1)
-                                else 
-                                    if (MEM p0 p1) then (subpile2 c ps p1)
-                                    else F)`; 
-  
-
-val SUBPILE_TWO_HEAD_REMOVAL = Q.store_thm ("SUBPILE_TWO_HEAD_REMOVAL",
- `!p1 p2 c h. (subpile2 c (h::p2) p1) ==> (subpile2 c p2 p1) `,
- 
-      (REPEAT STRIP_TAC
-         >> ASSUME_TAC CAND_EQ_DEC   
-           >> first_x_assum (qspecl_then [`c`,`FST h`] strip_assume_tac))
-              >- FULL_SIMP_TAC list_ss [subpile2_def]
-              >- metis_tac [subpile2_def]);
-  
- 
-val Functional_subpile2_IMP_TheLogical = Q.store_thm ("Functional_subpile2_IMP_TheLogical",
- `!p1 p2 c. (subpile2 c p2 p1) ==>  (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p2 ==> MEM (d',l) p1))))`,
-
-    Induct_on `p2`
-        >- rw []
-        >- ((REPEAT STRIP_TAC
-          >> FULL_SIMP_TAC bool_ss [MEM]) 
-             >- (`d' = FST h` by RW_TAC bool_ss [PAIR_EQ,FST] 
-               >> `c <> FST h` by RW_TAC bool_ss []   
-                 >>  RW_TAC bool_ss [subpile2_def]
-                   >> FULL_SIMP_TAC list_ss [subpile2_def])
-             >- (first_assum (qspecl_then [`p1`,`c`] strip_assume_tac)
-               >> metis_tac [SUBPILE_TWO_HEAD_REMOVAL])));
-
-
-`!p1 p2 c. (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p2 ==> MEM (d',l) p1))) 
-              /\ ((d' = c) ==> (MEM (c,[]) p2))) ==> (subpile2 c p2 p1)`
-
-Induct_on `p2`          
-
-  rw[subpile2_def]
-
-  REPEAT STRIP_TAC 
-  ASSUME_TAC CAND_EQ_DEC
-  first_x_assum (qspecl_then [`c`,`FST h`] strip_assume_tac)
- 
-      first_assum (qspecl_then [`FST h`] strip_assume_tac)
-      `MEM (c,[]) (h::p2)` by metis_tac [] 
-      FULL_SIMP_TAC list_ss [subpile2_def] 
-  
-          
-
-
-
-
-
-
-
-
-val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
-    (j1 = state ([], t, p, [], e, h))
-    /\ Valid_Init_CandList l
-    /\ (!c'. (MEM c' h) \/ (MEM c' e) ==> (MEM c' l))
-    /\ (!c'. NO_DUP_PRED h c')
-    /\ (!c'. NO_DUP_PRED e c')
-    /\ (LENGTH (e ++ h) > st) 
-    /\ (LENGTH e < st)
-    /\ (!c'. NO_DUP_PRED (MAP FST t) c')
-    /\ Valid_CandTally t l
-    /\ (!c'. (MEM c' h ==> (?x. MEM (c',x) t /\ ( x < qu))))  
-    /\ (MEM c h) 
-    /\ (!d. (MEM d h ==> (?x y. (MEM (c,x) t) /\ (MEM (d,y) t) /\ ( x <= y))))
-    /\ (eqe c nh h)
-    /\ (nba = get_cand_pile c p)
-    /\ ( MEM (c,[]) np)
-    /\ (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
-                              /\ (MEM (d',l) np ==> MEM (d',l) p))))
-    /\ (j2 = state (nba, t, np, [], e, nh)))) `; 
-                  
-
-
-
-(*to find the weakest candidate in a non-empty list of continuing candidates*)   
-val find_weakest_cand_def = Define `
-           (find_weakest_cand [h] l = h)
-        /\ (find_weakest_cand (h::h'::tl) l = (if (get_cand_tally h l <= get_cand_tally h' l)
-                                                      then find_weakest_cand (h::tl) l                                                         else find_weakest_cand (h'::tl) l)) `;
- 
- 
-(*checks if c is the weakest w.r.t. all the other continuing candidates*)
-val is_weakest_cand_def = Define `
-             (is_weakest_cand (c: Cand) [] l = T)
-          /\ (is_weakest_cand (c: Cand) (h::t) l = (if (get_cand_tally c l < get_cand_tally c l)
-                                                        then is_weakest_cand c t l
-                                                    else F)) `;
-
-
-   
-
-   
-
-   
-val APPEND_EQ_NIL = Q.store_thm ("APPEND_EQ_NIL",
-    `!l1 l2. ([] = l1 ++ l2) ==> ((l1 = []) /\ (l2 = [])) `,
-      Cases_on `l2`
-        >- ASM_SIMP_TAC bool_ss [APPEND_NIL]    
-        >- (Cases_on `l1` 
-          >> rw[APPEND_NIL_LEFT_COR]   
-            >> (ASM_SIMP_TAC bool_ss [NOT_NIL_CONS] 
-              >> STRIP_TAC 
-                >> rw[NOT_NIL_CONS]))) ;
-  
-val APPEND_MID_NOT_NIL = Q.store_thm ("APPEND_MID_NOT_NIL",
-       `!l1 l2 c. ([] = l1 ++([c]++l2)) = F `,
-           Induct_on `l1` 
-            >> rw[APPEND]) ;  
-    
-
-
- 
-`!c h h'. (?l1 l2. (h = l1++l2) 
-                /\ (h' = l1++([c]++l2)) 
-                /\ ~(MEM c l1) 
-                /\ ~(MEM c l2)) ==> (h = remove_one_cand c h')`
-
-STRIP_TAC Induct_on `h'` 
-   
->- rw[APPEND_MID_NOT_NIL] 
- 
-STRIP_TAC SPEC_TAC(h'', (!h   
-     
-
- 
-  
-  
-         
-
-
-Induct_on `h` 
-ASM_SIMP_TAC bool_ss []
-
-
-    
-           
-val Elim_def = Define `
-             (Elim st (qu : rat) ((j: judgement), winners w) = F)
-          /\ (Elim st qu (winners w, (j: judgement)) = F) 
-          /\ (Elim st qu (state (ba, t, p, bl, e, h), state (ba', t', p', bl', e',h')) = 
-                  ((empty_list ba) 
-               /\ (empty_list bl) 
-               /\ (t = t') /\ (bl = bl') /\ (e = e')
-               /\ (LENGTH (e ++ h) > st) /\ (LENGTH e < st)
-               /\ (MEM (find_weakest_cand h t) h)
-               /\ (less_than_quota qu h t)
-               /\ (h' = remove_one_cand (find_weakest_cand h t) h)
-               /\ (is_weakest_cand (find_weakest_cand h t) h t)
-               /\ (ba' = get_cand_pile (find_weakest_cand h t) p)
-               /\ (p' = empty_cand_pile (find_weakest_cand h t) p) )) `;
-                  
-`!st qu j1 j2. (Elim st qu (j1,j2) = T) ==> (elim st qu j1 j2) `
-STRIP_TAC STRIP_TAC 
-Cases_on `j1` Cases_on `j2`  Cases_on `p` Cases_on `r` Cases_on `r'` Cases_on `r` 
-Cases_on `r'` Cases_on `p'` Cases_on `r'` Cases_on `r''` Cases_on `r'` Cases_on `r''` 
-rw[Elim_def] rw[elim_def] 
- 
-
-
-
-`!st qu j1 j2. ((elim st qu j1 j2) ==> (Elim st qu (j1, j2) = T))`                   
-
-
-   
-
- 
-val rec Filter = fn  [] => []
-                    |(h::t) => if (no_dup (fst h)) then
-                                  if (non_empty (fst h)) 
-                                    then (h :: Filter t)
-                                  else Filter t
-                               else Filter t ; 
-                            
-                       
-val All_Tallies_Legal_def = Define `
-                               (All_Tallies_Legal (l: Cand list) [] = T)    
-                            /\ (All_Tallies_Legal l (h::t) = ((Legal_Tally_Cand l (h::t) (FST h)) 
-                                                           /\ (All_Tallies_Legal l t))) `;
-
-  
-val Legal_Init_CandList = Define `Legal_Init_CandList l t = ((l <> []) /\ (MAP FST t = l))`;
-
-    
-`!l t. ((t <> []) /\ (All_Tallies_Legal l t = T)) ==> (!c. (MEM c l) ==> (Legal_Tally_Cand l t c = T)) `
-        
- Induct_on `t`
- 
-   rw []
- 
-   REPEAT STRIP_TAC ASSUME_TAC CAND_EQ_DEC first_assum (qspecl_then [`c`,`FST h`] strip_assume_tac) 
-   
-        FULL_SIMP_TAC bool_ss [Legal_Tally_Cand_def,All_Tallies_Legal_def]  
-    
-        rw [Legal_Tally_Cand_def] FULL_SIMP_TAC bool_ss [All_Tallies_Legal_def]
-        Induct_on `t`  
-        
-               rw [] 
