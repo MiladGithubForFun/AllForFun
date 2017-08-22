@@ -12,7 +12,7 @@ open satTheory
   
        
 val _ = new_theory "test" ; 
-                       
+                        
 val _ = Hol_datatype ` Cand = cand of string ` ; 
    
 val _ = Hol_datatype `judgement =  
@@ -202,7 +202,7 @@ val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
                       >> RW_TAC bool_ss [GET_CAND_TALLY_HEAD_REMOVAL_def]))));
     
 *---------------------------------------------------*
-           
+            
    
 val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
    `!l  (t: (Cand # rat) list) c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `,                           
@@ -994,8 +994,94 @@ val Logical_weakest_cand_IMP_TheFunctional = Q.store_thm ("Logical_weakest_cand_
                 >> metis_tac[RAT_LEQ_REF,RAT_LEQ_TRANS])
               >- metis_tac[])))); 
         
+   
   
+val head_biggerthan_weakest_cand = Q.store_thm ("head_biggerthan_weakest_cand",
+ `!h1 h2 t. get_cand_tally (weakest_cand (h1::h2) t) t <= get_cand_tally h1 t`, 
+
+    Induct_on `h2`
+        >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
+        >- ((REPEAT STRIP_TAC >>
+          `   (get_cand_tally h1 t < get_cand_tally h t)
+           \/ (get_cand_tally h1 t = get_cand_tally h t)
+           \/ (get_cand_tally h t < get_cand_tally h1 t)` by metis_tac [RAT_LES_TOTAL])
+             >- FULL_SIMP_TAC list_ss [weakest_cand_def, RAT_LES_IMP_LEQ]
+             >- metis_tac [weakest_cand_def,RAT_LEQ_REF]
+             >- (FULL_SIMP_TAC list_ss [weakest_cand_def, RAT_LES_LEQ2,RAT_LEQ_LES]
+               >> `get_cand_tally (weakest_cand (h::h2) t) t <= get_cand_tally h t` by metis_tac []
+                 >> metis_tac [RAT_LEQ_TRANS])));
+  
+
+val weakest_cand_is_TheWeakest = Q.store_thm ("weakest_cand_is_TheWeakest",
+ `!h0 h t. (!c. MEM c (h0::h) ==> (get_cand_tally (weakest_cand (h0::h) t) t <= get_cand_tally c t))`,
  
+    Induct_on `h`
+        >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
+        >- ((REPEAT STRIP_TAC 
+          >> `(c = h0) \/ (MEM c (h'::h))` by metis_tac [MEM]) 
+            >- metis_tac [head_biggerthan_weakest_cand]
+            >- (`(get_cand_tally h0 t <= get_cand_tally h' t) 
+               \/ (get_cand_tally h0 t < get_cand_tally h' t) \/ (get_cand_tally h' t < get_cand_tally h0 t)`
+               by metis_tac[RAT_LES_TOTAL,RAT_LEQ_REF]     
+               >- (FULL_SIMP_TAC list_ss [weakest_cand_def] 
+                 >> `get_cand_tally (weakest_cand (h0::h) t) t <= get_cand_tally h0 t` 
+                    by metis_tac[head_biggerthan_weakest_cand] 
+                   >> metis_tac [RAT_LEQ_TRANS])
+               >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_IMP_LEQ] 
+                 >> `get_cand_tally (weakest_cand (h0::h) t) t <= get_cand_tally h0 t` 
+                     by metis_tac[head_biggerthan_weakest_cand] 
+                   >> metis_tac [RAT_LES_IMP_LEQ,RAT_LEQ_TRANS])
+               >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_IMP_LEQ]
+                 >- metis_tac [RAT_LEQ_LES]
+                 >- metis_tac [RAT_LEQ_LES]))));
+  
+
+val weakest_cand_is_TheWeakset_COR = Q.store_thm ("weakest_cand_is_TheWeakset_COR",
+ `! (r:rat) h0 h t. r <= get_cand_tally (weakest_cand (h0::h) t) t 
+         ==> (!c. MEM c (h0::h) ==> r <= get_cand_tally c t)`,
+
+      (REPEAT STRIP_TAC 
+        >> `get_cand_tally (weakest_cand (h0::h) t) t <= get_cand_tally c t` 
+             by metis_tac [weakest_cand_is_TheWeakest] 
+           >> metis_tac [RAT_LEQ_TRANS]));  
+ 
+
+ 
+
+
+
+
+
+
+`!h0 h t c. MEM c (h0::h) ==> ((get_cand_tally c t <= get_cand_tally (weakest_cand (h0::h) t) t) ==> 
+                                                      (MEM c (list_weakest_cand (h0::h) t)))`
+
+
+Induct_on `h`
+   
+ FULL_SIMP_TAC list_ss [weakest_cand_def,list_weakest_cand_def]
+    
+ REPEAT STRIP_TAC   
+ `(c = h0) \/ (MEM c (h'::h))` by metis_tac [MEM]  
+       
+     FULL_SIMP_TAC list_ss [list_weakest_cand_def,RAT_LEQ_REF]
+     `get_cand_ta
+
+`!c h0 h t. (MEM c h) /\ (MEM c (MAP FST t)) /\ (!c'. (MEM c' h ==> MEM c' (MAP FST t))) 
+ /\ (!c'. NO_DUP_PRED (MAP FST t) c') /\ (!d. (MEM d h ==> (!l l'. MEM (d,l) t /\ MEM (c,l') t ==> l' <= l))) 
+          ==> MEM c (list_weakest_cand h t)`                           
+
+Induct_on `h`
+    
+ rw []
+  
+ REPEAT STRIP_TAC 
+   
+
+
+
+
+
 
          
 
