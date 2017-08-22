@@ -12,9 +12,9 @@ open satTheory
   
        
 val _ = new_theory "test" ; 
-                     
+                       
 val _ = Hol_datatype ` Cand = cand of string ` ; 
-  
+   
 val _ = Hol_datatype `judgement =  
                                  state   of 
                                     ((Cand list) # rat) list
@@ -170,7 +170,7 @@ val GET_CAND_TALLY_MEM2 = Q.store_thm ("GET_CAND_TALLY_MEM",
         >- (EVAL_TAC 
           >> REPEAT STRIP_TAC >> rw []));
  
-   
+     
 *------------------------------------------*
 val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
  `!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) 
@@ -203,7 +203,7 @@ val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
     
 *---------------------------------------------------*
            
-  
+   
 val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
    `!l  (t: (Cand # rat) list) c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `,                           
  
@@ -900,131 +900,101 @@ val list_weakest_cand_def = Define `
                   else list_weakest_cand (h1::h) t) `;
   
   
-
  
-`!h0 h t. (!c'. (MEM c' (h0::h) ==> MEM c' (MAP FST t)))
+ 
+val Logical_weakest_cand_IMP_TheFunctional = Q.store_thm ("Logical_weakest_cand_IMP_TheFunctional",
+ `!h0 h t. (!c'. (MEM c' (h0::h) ==> MEM c' (MAP FST t)))
                 /\(!c'. NO_DUP_PRED (MAP FST t) c') ==> (!d. MEM d (h0::h) ==> !l. MEM (d,l) t
-                                                     ==> get_cand_tally (weakest_cand (h0::h) t) t <= l)` 
+                                                     ==> get_cand_tally (weakest_cand (h0::h) t) t <= l)`, 
 
 
-Induct_on `h`
-          
- >-  (rw[weakest_cand_def] >> ASSUME_TAC EVERY_CAND_HAS_ONE_TALLY >>     
-   first_assum (qspecl_then [`t`,`h0`,`l`] strip_assume_tac) >> 
-   FULL_SIMP_TAC bool_ss [RAT_LEQ_REF])   
-              
->-   ((REPEAT STRIP_TAC  >>        
-   `(d= h0) \/ (MEM d (h'::h))` by FULL_SIMP_TAC list_ss[])           
-    >-   (ASSUME_TAC RAT_LES_TOTAL >>    
-       first_assum (qspecl_then [`get_cand_tally h0 t`,`get_cand_tally h' t`] strip_assume_tac))
-          
-      >-    (FULL_SIMP_TAC list_ss [weakest_cand_def,get_cand_tally_def,RAT_LES_IMP_LEQ] >>  
-          FULL_SIMP_TAC list_ss [weakest_cand_def,get_cand_tally_def,RAT_LEQ_REF] >>  
-          FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2]   >> 
-          first_assum (qspecl_then [`h'`,`t`] strip_assume_tac) >>           
-          `MEM h' (MAP FST t)` by metis_tac [] >> 
-          `!d. (d = h') \/ (MEM d h) ==> (!l. MEM (d,l) t ==> get_cand_tally (weakest_cand (h'::h) t) t <= l)`
-          by metis_tac [] >> 
-          `MEM (h',get_cand_tally h' t) t` by FULL_SIMP_TAC list_ss [GET_CAND_TALLY_MEM2] >>  
-          first_assum (qspecl_then [`h'`] strip_assume_tac) >>
-          metis_tac [weakest_cand_def]) 
-       
-      >-    (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF] >>
-          `MEM h0 (MAP FST t)` by metis_tac [GET_CAND_TALLY_MEM2] >> 
-          metis_tac [])        
-    
-     >-     (ASSUME_TAC RAT_LES_LEQ >> 
-          `~ (get_cand_tally h0 t <= (get_cand_tally h' t))` by metis_tac [] >> 
-          RW_TAC bool_ss [weakest_cand_def]  >>
-          first_assum (qspecl_then [`h'`,`t`] strip_assume_tac) >> 
-          `MEM (h',get_cand_tally h' t) t` by FULL_SIMP_TAC list_ss [GET_CAND_TALLY_MEM2] >> 
-          `!h1 h2 t. get_cand_tally (weakest_cand (h1::h2) t) t <= get_cand_tally h1 t` 
-           by (Induct_on `h2`
-                   >-   FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
-
-                   >-  ((REPEAT STRIP_TAC >>
-                      `(get_cand_tally h1 t' < get_cand_tally h'' t') 
+   Induct_on `h`
+     >- (rw[weakest_cand_def] >> ASSUME_TAC EVERY_CAND_HAS_ONE_TALLY 
+         >> first_assum (qspecl_then [`t`,`h0`,`l`] strip_assume_tac) 
+         >> FULL_SIMP_TAC bool_ss [RAT_LEQ_REF])   
+     >- ((REPEAT STRIP_TAC  
+        >> `(d= h0) \/ (MEM d (h'::h))` by FULL_SIMP_TAC list_ss[])            
+          >- ((ASSUME_TAC RAT_LES_TOTAL 
+           >> first_assum (qspecl_then [`get_cand_tally h0 t`,`get_cand_tally h' t`] strip_assume_tac))
+            >- (FULL_SIMP_TAC list_ss [weakest_cand_def,get_cand_tally_def,RAT_LES_IMP_LEQ] 
+             >> FULL_SIMP_TAC list_ss [weakest_cand_def,get_cand_tally_def,RAT_LEQ_REF] 
+             >> FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2]   
+             >> first_assum (qspecl_then [`h'`,`t`] strip_assume_tac) 
+             >> `MEM h' (MAP FST t)` by metis_tac [] 
+             >> `!d. (d = h') \/ (MEM d h) ==> (!l. MEM (d,l) t 
+                             ==> get_cand_tally (weakest_cand (h'::h) t) t <= l)` by metis_tac [] 
+             >> `MEM (h',get_cand_tally h' t) t` by FULL_SIMP_TAC list_ss [GET_CAND_TALLY_MEM2] 
+             >> first_assum (qspecl_then [`h'`] strip_assume_tac) 
+             >> metis_tac [weakest_cand_def]) 
+            >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF] 
+             >> `MEM h0 (MAP FST t)` by metis_tac [GET_CAND_TALLY_MEM2] 
+             >> metis_tac [])        
+            >- (ASSUME_TAC RAT_LES_LEQ 
+             >> `~ (get_cand_tally h0 t <= (get_cand_tally h' t))` by metis_tac [] 
+             >> RW_TAC bool_ss [weakest_cand_def]  
+             >> first_assum (qspecl_then [`h'`,`t`] strip_assume_tac) 
+             >> `MEM (h',get_cand_tally h' t) t` by FULL_SIMP_TAC list_ss [GET_CAND_TALLY_MEM2] 
+             >> `!h1 h2 t. get_cand_tally (weakest_cand (h1::h2) t) t <= get_cand_tally h1 t` 
+                 by (Induct_on `h2`
+                   >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
+                   >- ((REPEAT STRIP_TAC 
+                    >> `(get_cand_tally h1 t' < get_cand_tally h'' t') 
                       \/ (get_cand_tally h1 t' = get_cand_tally h'' t')
                       \/ (get_cand_tally h'' t' < get_cand_tally h1 t')` by metis_tac [])
-  
-                       >-   FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_IMP_LEQ] 
-   
-                       >-    metis_tac [weakest_cand_def,RAT_LEQ_REF]                         
-                          
-                       >-   metis_tac [weakest_cand_def,RAT_LES_LEQ2,RAT_LES_TRANS])) >>
-                                  
-          `get_cand_tally d t = l` by
-          (ASSUME_TAC EVERY_CAND_HAS_ONE_TALLY >>    
-          first_assum (qspecl_then [`t`,`d`,`l`] strip_assume_tac) >> metis_tac []) >>  
-          metis_tac [RAT_LES_TRANS])
-       
-
- 
-  >- (`(get_cand_tally h' t < get_cand_tally h0 t) 
-     \/ (get_cand_tally h' t = get_cand_tally h0 t) 
-     \/ (get_cand_tally h0 t < get_cand_tally h' t)` by metis_tac [RAT_LES_TOTAL]       
-         
-    >-    (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2]
-    
-             >-  (FULL_SIMP_TAC list_ss [weakest_cand_def] >> metis_tac [])  
-     
-             >-  metis_tac [])
-                
-    >-    (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF,MEM]     
-            
-             >- (`!h1 h2 t. get_cand_tally (weakest_cand (h1::h2) t) t <= get_cand_tally h1 t` 
-                by  (Induct_on `h2` 
-                    >-   FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
-     
-                    >-   ((REPEAT STRIP_TAC >>
-                      `(get_cand_tally h1 t' < get_cand_tally h'' t') 
-                      \/ (get_cand_tally h1 t' = get_cand_tally h'' t')
-                      \/ (get_cand_tally h'' t' < get_cand_tally h1 t')` by metis_tac [RAT_LES_TOTAL])    
-    
+                   >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_IMP_LEQ] 
+                   >- metis_tac [weakest_cand_def,RAT_LEQ_REF]                         
+                   >- metis_tac [weakest_cand_def,RAT_LES_LEQ2,RAT_LES_TRANS])) 
+                    >> `get_cand_tally d t = l` 
+                      by (ASSUME_TAC EVERY_CAND_HAS_ONE_TALLY 
+                        >> first_assum (qspecl_then [`t`,`d`,`l`] strip_assume_tac) 
+                        >> metis_tac []) 
+                        >> metis_tac [RAT_LES_TRANS]))
+          >- (`(get_cand_tally h' t < get_cand_tally h0 t) 
+            \/ (get_cand_tally h' t = get_cand_tally h0 t) 
+            \/ (get_cand_tally h0 t < get_cand_tally h' t)` by metis_tac [RAT_LES_TOTAL]       
+            >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2]
+              >- (FULL_SIMP_TAC list_ss [weakest_cand_def] >> metis_tac [])  
+              >- metis_tac [])
+            >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF,MEM]     
+              >- (`!h1 h2 t. get_cand_tally (weakest_cand (h1::h2) t) t <= get_cand_tally h1 t` 
+                 by  (Induct_on `h2` 
+                   >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
+                   >- ((REPEAT STRIP_TAC 
+                     >>  `(get_cand_tally h1 t' < get_cand_tally h'' t') 
+                       \/ (get_cand_tally h1 t' = get_cand_tally h'' t')
+                       \/ (get_cand_tally h'' t' < get_cand_tally h1 t')` by metis_tac [RAT_LES_TOTAL])    
                         >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_IMP_LEQ] 
-      
                         >- metis_tac [weakest_cand_def,RAT_LEQ_REF]                         
-                              
-                        >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2,RAT_LEQ_LES] >>     
-                         `get_cand_tally (weakest_cand (h''::h2) t') t' <= get_cand_tally h'' t'` 
-                           by metis_tac [] >> 
-                         metis_tac[RAT_LEQ_TRANS]))) >>          
-                `(get_cand_tally (weakest_cand (h0::h) t)) t <= (get_cand_tally h0 t)` by metis_tac[] >>   
-                `get_cand_tally d t = l` by metis_tac [EVERY_CAND_HAS_ONE_TALLY] >> 
-                `get_cand_tally d t = get_cand_tally h' t` by metis_tac [] >> 
-                metis_tac [RAT_LEQ_REF])
-       
-              >-  metis_tac [])  
-   
- 
+                        >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2,RAT_LEQ_LES] 
+                          >> `get_cand_tally (weakest_cand (h''::h2) t') t' <= get_cand_tally h'' t'` 
+                              by metis_tac [] 
+                          >> metis_tac[RAT_LEQ_TRANS]))) 
+                >> `(get_cand_tally (weakest_cand (h0::h) t)) t <= (get_cand_tally h0 t)` by metis_tac[] 
+                >> `get_cand_tally d t = l` by metis_tac [EVERY_CAND_HAS_ONE_TALLY] 
+                >> `get_cand_tally d t = get_cand_tally h' t` by metis_tac [] 
+                >> metis_tac [RAT_LEQ_REF])
+              >- metis_tac [])  
+            >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2] 
+              >- ( `!h1 h2 t. get_cand_tally (weakest_cand (h1::h2) t) t <= get_cand_tally h1 t` 
+                 by  (Induct_on `h2`
+                    >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
+                    >- ((REPEAT STRIP_TAC >>
+                       `(get_cand_tally h1 t' < get_cand_tally h'' t') 
+                       \/ (get_cand_tally h1 t' = get_cand_tally h'' t')
+                       \/ (get_cand_tally h'' t' < get_cand_tally h1 t')` by metis_tac [RAT_LES_TOTAL])    
+                      >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_IMP_LEQ] 
+                      >- metis_tac [weakest_cand_def,RAT_LEQ_REF]                         
+                      >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2,RAT_LEQ_LES] 
+                       >> `get_cand_tally (weakest_cand (h''::h2) t') t' <= get_cand_tally h'' t'` 
+                           by metis_tac [] 
+                       >> metis_tac[RAT_LEQ_TRANS]))) 
+                >> first_assum (qspecl_then [`h0`,`h`,`t`] strip_assume_tac) 
+                >> `l = get_cand_tally d t` by metis_tac [EVERY_CAND_HAS_ONE_TALLY] 
+                >> `l = get_cand_tally h' t` by metis_tac [RAT_LEQ_REF] 
+                >> metis_tac[RAT_LEQ_REF,RAT_LEQ_TRANS])
+              >- metis_tac[])))); 
+        
   
-    >-     (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2] 
-             
-             >- ( `!h1 h2 t. get_cand_tally (weakest_cand (h1::h2) t) t <= get_cand_tally h1 t` 
-                by  (Induct_on `h2`
-                    >-   FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LEQ_REF]
- 
-                    >-   ((REPEAT STRIP_TAC >>
-                      `(get_cand_tally h1 t' < get_cand_tally h'' t') 
-                      \/ (get_cand_tally h1 t' = get_cand_tally h'' t')
-                      \/ (get_cand_tally h'' t' < get_cand_tally h1 t')` by metis_tac [RAT_LES_TOTAL])    
-  
-                        >- FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_IMP_LEQ] 
-    
-                        >- metis_tac [weakest_cand_def,RAT_LEQ_REF]                         
-                            
-                        >- (FULL_SIMP_TAC list_ss [weakest_cand_def,RAT_LES_LEQ2,RAT_LEQ_LES] >>    
-                         `get_cand_tally (weakest_cand (h''::h2) t') t' <= get_cand_tally h'' t'`
-                           by metis_tac [] >>
-                         metis_tac[RAT_LEQ_TRANS]))) >>   
-            first_assum (qspecl_then [`h0`,`h`,`t`] strip_assume_tac) >>
-             `l = get_cand_tally d t` by metis_tac [EVERY_CAND_HAS_ONE_TALLY] >> 
-            `l = get_cand_tally h' t` by metis_tac [RAT_LEQ_REF] >>
-            metis_tac[RAT_LEQ_REF,RAT_LEQ_TRANS])
-            
-        >- metis_tac[])))
-      
- 
  
 
          
