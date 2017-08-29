@@ -941,7 +941,7 @@ val Logical_list_MEM_VICE_VERCA_TheFunctional = Q.store_thm("Logical_list_MEM_VI
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ Valid_Init_CandList l
-    /\ (!c'. MEM c (h++e) ==> (MEM c' l))
+    /\ (!c'. MEM c' (h++e) ==> (MEM c' l))
     /\ (!c'. NO_DUP_PRED (h++e) c')
     /\ (Valid_PileTally p l)   
     /\ (Valid_PileTally np l)
@@ -958,7 +958,7 @@ val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j
     /\ (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
                               /\ (MEM (d',l) np ==> MEM (d',l) p))))
     /\ (j2 = state (nba, t, np, [], e, nh)) ) `; 
-                     
+                      
  
 
 
@@ -987,7 +987,7 @@ val Elim_cand_dec_def = Define `
                /\ (ba' = get_cand_pile c p)
                /\ (MEM (c,[]) p')
                /\ (subpile1 c p p') /\ (subpile2 c p' p) )) `;
-                        
+                         
  
 `!l1 l2 c. NO_DUP_PRED (l1++l2) c ==> (NO_DUP_PRED l1 c)`
 
@@ -1020,54 +1020,134 @@ Induct_on `l1`
 
 
 
-  
+   
 val Logical_elim_to_Functional_Elim = Q.store_thm ("Logical_elim_to_Functional_Elim",
  `!st qu l c j1 j2. elim_cand st qu l c j1 j2 ==> (Elim_cand_dec st qu l c (j1,j2))`,
-
+ 
    (rw[elim_cand_def,Elim_cand_dec_def]   
     >> EVAL_TAC   
-     >> REPEAT STRIP_TAC) 
-      >- rw[]    
-      >- RW_TAC bool_ss []   
+     >> REPEAT STRIP_TAC)  
+      >- rw[]      
+      >- RW_TAC bool_ss []     
       >- (`l <> []` by metis_tac[Valid_Init_CandList] 
          >> `?l1 x. l = x::l1` by metis_tac [list_nchotomy] 
-           >> rw[non_empty]) 
-      >- metis_tac [Valid_Init_CandList,NO_DUP_PRED_to_no_dup]  
-      >- metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional]
+           >> rw[non_empty])   
+      >- metis_tac [Valid_Init_CandList,NO_DUP_PRED_to_no_dup]    
+      >- (`!(l1:Cand list) l2 (c':Cand). MEM c' l1 \/ MEM c' l2 ==> MEM c' (l1++l2)` 
+              by FULL_SIMP_TAC list_ss [MEM,MEM_APPEND]
+          >> `!c'. MEM c' (h++e) ==> MEM c' l` by metis_tac [MEM,MEM_APPEND]      
+            >> metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional])  
       >- metis_tac [NO_DUP_PRED_to_no_dup] 
-      >- metis_tac [PileTally_to_PileTally_DEC1] 
-      >- metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]
-      >- metis_tac [PileTally_to_PileTally_DEC1]
-      >- metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]  
-      >- metis_tac [NO_DUP_PRED_to_no_dup]
-      >- metis_tac [Valid_PileTally,PileTally_to_PileTally_DEC1]
+      >- metis_tac [PileTally_to_PileTally_DEC1,Valid_PileTally]   
+      >- metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally] 
+      >- metis_tac [PileTally_to_PileTally_DEC1,Valid_PileTally]  
+      >- metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]   
+      >- metis_tac [NO_DUP_PRED_to_no_dup] 
+      >- metis_tac [Valid_PileTally,PileTally_to_PileTally_DEC1] 
       >- metis_tac [Valid_PileTally,PileTally_to_PileTally_DEC2]
       >- rw []
-      >- metis_tac [LogicalLessThanQu_IMP_less_than_quota,Valid_PileTally]
-      >- metis_tac [EQE_IMP_REMOVE_ONE_CAND]
+      >- metis_tac [LogicalLessThanQu_IMP_less_than_quota,Valid_PileTally] 
+      >- metis_tac [EQE_IMP_REMOVE_ONE_CAND] 
       >- (`MEM c (MAP FST t)` by metis_tac [Valid_PileTally,FST,MAP] 
         >> `!d. MEM d h ==> MEM d (MAP FST t)` by metis_tac [Valid_PileTally] 
-         >> metis_tac [Logical_bigger_than_cand_IMP_TheFunctional])
-      >- rw[]
-      >- metis_tac [Logical_subpile1_IMP_TheFunctional]         
+         >> metis_tac [Logical_bigger_than_cand_IMP_TheFunctional]) 
+      >- rw[] 
+      >- metis_tac [Logical_subpile1_IMP_TheFunctional]          
       >- (`!d. (d = c) ==> ?l. MEM (c,l) p` by metis_tac[GET_CAND_PILE_MEM,Valid_PileTally]  
-          >> metis_tac [Logical_subpile2_IMP_TheFunctional])) 
- 
-
-
-
-
-
-
-
-
- 
-
+          >> metis_tac [Logical_subpile2_IMP_TheFunctional])); 
   
-`!st qu j1 j2. ((elim st qu j1 j2) ==> (Elim st qu (j1, j2) = T))`                   
+  
+val empty_list_verified= Q.store_thm ("empty_list_verified",
+ `!l. empty_list l ==> (l = [])`,
+
+   Induct_on `l`
+     >- rw[]  
+     >- metis_tac[empty_list_def]);
 
 
+
+
+
+
+val Functional_Elim_to_Logical_elim = Q.store_thm ("Functional_Elim_to_Logical_elim",
+ `!st qu l c j1 j2. Elim_cand_dec st qu l c (j1,j2) ==> elim_cand st qu l c j1 j2`,
    
+  (STRIP_TAC 
+     >> STRIP_TAC >> STRIP_TAC >> STRIP_TAC >> STRIP_TAC >> STRIP_TAC 
+       >> Cases_on `j1`)
+         >- (Cases_on `j2` 
+           >- ((rw[Elim_cand_dec_def,elim_cand_def] 
+            >> Cases_on `p` >> Cases_on `r` >> Cases_on `r'` >> Cases_on `r` >> Cases_on `r'` 
+             >> Cases_on `p'` >> Cases_on `r'` >> Cases_on `r''` >> Cases_on `r'` >> Cases_on `r''` 
+              >> rfs[Elim_cand_dec_def] 
+               >> REPEAT STRIP_TAC)   
+                >- metis_tac[empty_list_verified]       
+                >- (RW_TAC bool_ss [empty_list_def] 
+                 >> metis_tac [empty_list_verified]) 
+                >- (`!(L:Cand list). non_empty L ==> (L <> [])` 
+                  by (Induct_on `L` 
+                     >- rw[non_empty] 
+                     >- rw[non_empty]) >> metis_tac[Valid_Init_CandList,no_dup_IMP_NO_DUP_PRED,non_empty])
+                >- metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional,MEM_APPEND]  
+                >- (RW_TAC bool_ss [] >> metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional,MEM_APPEND])
+                >- (RW_TAC bool_ss [] >> metis_tac [no_dup_IMP_NO_DUP_PRED]) 
+                >- metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally]
+                >- metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally]    
+                >- metis_tac[] 
+                >- metis_tac[] 
+                >- metis_tac [no_dup_IMP_NO_DUP_PRED]
+                >- metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally]
+                >- (`!(L:Cand list). non_empty L ==> (L <> [])` 
+                   by (Induct_on `L` 
+                     >- rw[non_empty] 
+                     >- rw[non_empty]) >> `?L y. l = y::L` by metis_tac[non_empty,list_nchotomy] 
+                      >> `MEM y (MAP FST q')` by metis_tac [PileTally_DEC2_IMP_PileTally,MEM] 
+                      >> `?l1 q1. q' = q1::l1` by metis_tac [MEM_MAP,MEM,list_nchotomy] 
+                      >> `!d. MEM d r ==> MEM d l` 
+                           by metis_tac [MEM_APPEND,Logical_list_MEM_VICE_VERCA_TheFunctional] 
+                      >> `!d. MEM d r ==> MEM d (MAP FST q')` by metis_tac [PileTally_DEC2_IMP_PileTally] 
+                    >> metis_tac[PileTally_to_PileTally_DEC2,less_than_qu_IMP_LogicalLessThanQuota])              
+                >- (`!(L:Cand list). non_empty L ==> (L <> [])` 
+                   by (Induct_on `L` 
+                    >- rw[non_empty] 
+                    >- rw[non_empty]) >> `?L y. l = y::L` by metis_tac[non_empty,list_nchotomy] 
+                     >> `MEM y (MAP FST q')` by metis_tac [PileTally_DEC2_IMP_PileTally,MEM] 
+                     >> `?l1 q1. q' = q1::l1` by metis_tac [MEM_MAP,MEM,list_nchotomy] 
+                     >> `!d. MEM d r ==> MEM d l` 
+                         by metis_tac [MEM_APPEND,Logical_list_MEM_VICE_VERCA_TheFunctional] 
+                     >> `!d. MEM d r ==> MEM d (MAP FST q')` by metis_tac [PileTally_DEC2_IMP_PileTally] 
+                     >> metis_tac [PileTally_to_PileTally_DEC2,bigger_than_cand_LogicallyOK])
+                >- (`!(l1 :Cand list) l2. no_dup (l1++l2) ==> no_dup l1`   
+                    by (Induct_on `l1`
+                     >- rw[no_dup]
+                     >- ((REPEAT STRIP_TAC >> rw[no_dup]) 
+                        >- (`not_elem h (l1++l2)` by rfs [no_dup] 
+                         >>`!G1 G2 (s: Cand). (not_elem s (G1++G2) = (not_elem s G1) /\ (not_elem s G2))`
+                             by (Induct_on `G1` 
+                              >- FULL_SIMP_TAC list_ss [APPEND_NIL_LEFT,not_elem]
+                              >- ((ASSUME_TAC CAND_EQ_DEC >> REPEAT STRIP_TAC 
+                                >> first_x_assum (qspecl_then [`s`,`h'`] strip_assume_tac))
+                                 >- FULL_SIMP_TAC list_ss [not_elem]
+                                 >- FULL_SIMP_TAC list_ss [not_elem])) >> metis_tac[]) 
+                        >- (`!d. NO_DUP_PRED (h::l1++l2) d` by metis_tac [no_dup_IMP_NO_DUP_PRED] 
+                          >> `h::l1++l2 = h::(l1++l2)` by FULL_SIMP_TAC list_ss [] 
+                           >> `!d. NO_DUP_PRED (l1++l2) d` by metis_tac [NO_DUP_HEAD_REMOVAL] 
+                            >> metis_tac [NO_DUP_PRED_to_no_dup])))
+                    >> metis_tac [EQE_REMOVE_ONE_CAND,no_dup_IMP_NO_DUP_PRED]) 
+                >- metis_tac [Functional_subpile1_IMP_TheLogical] 
+                >- metis_tac [Functional_subpile2_IMP_TheLogical]
+                >- metis_tac [empty_list_verified]) 
+   
+            >- rw[Elim_cand_dec_def])
+        >- (Cases_on `j2` 
+            >- RW_TAC bool_ss [Elim_cand_dec_def]
+            >- rw[Elim_cand_dec_def]));      
+  
+ 
+
+
+
+
 val APPEND_EQ_NIL = Q.store_thm ("APPEND_EQ_NIL",
     `!l1 l2. ([] = l1 ++ l2) ==> ((l1 = []) /\ (l2 = [])) `,
       Cases_on `l2`
