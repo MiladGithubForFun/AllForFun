@@ -12,7 +12,7 @@ open satTheory
    
        
 val _ = new_theory "test" ; 
-                              
+                                
 val _ = Hol_datatype ` Cand = cand of string ` ; 
     
 val _ = Hol_datatype `judgement =  
@@ -169,8 +169,8 @@ val GET_CAND_TALLY_MEM2 = Q.store_thm ("GET_CAND_TALLY_MEM",
         >- rw []
         >- (EVAL_TAC 
           >> REPEAT STRIP_TAC >> rw []));
- 
-       
+  
+        
 *------------------------------------------*
 val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
  `!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) 
@@ -899,15 +899,11 @@ val no_dup_pile_def = Define `
  
 val NO_DUP_PILE = Define `
     NO_DUP_PILE (p: ((((Cand list) # rat) list) list)) x = (p = []) \/ (~ MEM x p) \/
-                                                   (?l1 l2. (p = l1 ++ x::l2) /\ (~ MEM x l1) /\ (~ MEM x l2))`;  
+                                                   (?l1 l2. (p = l1 ++ x::l2) /\ (~ MEM x l1) /\ (~ MEM x l2))`;   
   
 
  
 
-`!(p: (Cand # (((Cand list) # rat) list)) list) c. (?l'. MEM (c,l') p /\ (no_du (MAP SND p) l')) /\ 
-  (!c. NO_DUP_PRED (MAP FST p) c)  ==>
-     (!d. (d <> c) ==> (!l. MEM (d,l) p ==> ~ (l = get_cand_pile c p))) 
-  /\ (!d. (d = c) ==> (!l. (MEM (c,l) p) ==> (l = get_cand_pile c p)))`
 
 
 val list_MEM_def = Define `
@@ -988,7 +984,7 @@ val Elim_cand_dec_def = Define `
                /\ (MEM (c,[]) p')
                /\ (subpile1 c p p') /\ (subpile2 c p' p) )) `;
                          
- 
+   
 `!l1 l2 c. NO_DUP_PRED (l1++l2) c ==> (NO_DUP_PRED l1 c)`
 
 Induct_on `l1`
@@ -1143,11 +1139,72 @@ val Functional_Elim_to_Logical_elim = Q.store_thm ("Functional_Elim_to_Logical_e
             >- RW_TAC bool_ss [Elim_cand_dec_def]
             >- rw[Elim_cand_dec_def]));      
   
+  
+   
+val transfer_def = Define `(transfer st (qu:rat) l j1 j2 = ? nba t p bl e h nbl np.
+          (j1 = state ([], t, p, bl, e, h))
+       /\ (LENGTH e > st)
+       /\ (!d. MEM d (h++e) ==> MEM d l)
+       /\ (!d. NO_DUP_PRED (h++e) d)
+       /\ (Valid_PileTally t l)
+       /\ (Valid_PileTally p l)
+       /\ (Valid_PileTally np l)
+       /\ (Valid_Init_CandList l)
+       /\ (!c. NO_DUP_PRED (MAP FST t) c)
+       /\ (!c'. (MEM c' h ==> (?x. MEM (c',x) t /\ ( x < qu))))
+       /\ ? l c.
+                ((bl = c::l)
+             /\ (nbl = l)
+             /\ (nba = get_cand_pile c p)
+             /\ (MEM (c,[]) np)
+             /\ (!d'. ((d' <> c) ==> (!l'. (MEM (d',l') p ==> MEM (d',l') np) 
+                              /\ (MEM (d',l') np ==> MEM (d',l') p)))))
+             /\ (j2 = state (nba, t, np, nbl, e, h)))`; 
+  
  
+ 
+val Transfer_dec_def = Define `
+         (Transfer_dec st (qu : rat) (l: Cand list) ((j: judgement), winners w) = F)
+          /\ (Transfer_dec st qu l (winners w, (j: judgement)) = F) 
+          /\ (Transfer_dec st qu l (state (ba, t, p, bl, e, h), state (ba', t', p', bl', e',h')) =
+              (LENGTH e > st)
+           /\ (list_MEM (h++e) l)
+           /\ no_dup (h++e)
+           /\ (Valid_PileTally_DEC1 t l) /\ (Valid_PileTally_DEC2 t l)
+           /\ (Valid_PileTally_DEC1 p l) /\ (Valid_PileTally_DEC2 p l)
+           /\ (Valid_PileTally_DEC1 p' l) /\ (Valid_PileTally_DEC2 p' l)
+           /\ (non_empty l) /\ (no_dup l)
+           /\ (no_dup (MAP FST t))
+           /\ (less_than_quota qu h t) 
+           /\ (bl = (HD bl) :: (TL bl))
+           /\ (bl' = (TL bl))
+           /\ (ba' = get_cand_pile (HD bl) p)
+           /\ (MEM (HD bl,[]) p')
+           /\ (subpile1 (HD bl) p p') /\ (subpile2 (HD bl) p' p))`;
+  
+ 
+`! st qu l j1 j2. transfer st qu l j1 j2 ==> Transfer_dec st qu l (j1,j2)` 
 
+rw[transfer_def,Transfer_dec_def]
+EVAL_TAC 
+REPEAT STRIP_TAC 
 
-
-
+  (1) rw[]
+  (2) (`(!d. MEM d h \/ MEM d e ==> MEM d l) ==> (!d. MEM d (h++e) ==> MEM d l)` 
+         by  FULL_SIMP_TAC list_ss [MEM_APPEND] >>
+      metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional])
+  (3) metis_tac [NO_DUP_PRED_to_no_dup]
+  (4) metis_tac [PileTally_to_PileTally_DEC1,Valid_PileTally] 
+  (5) metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]
+  (6) metis_tac [PileTally_to_PileTally_DEC1,Valid_PileTally]
+  (7)  metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]
+  (8)  metis_tac [PileTally_to_PileTally_DEC1,Valid_PileTally]
+  (9) metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]
+  (10) (`?l1 y. l = y::l1` by metis_tac [Valid_Init_CandList,list_nchotomy]
+         >> rw[non_empty])  
+  (11) metis_tac [NO_DUP_PRED_to_no_dup,Valid_Init_CandList] 
+  (12) metis_tac [NO_DUP_PRED_to_no_dup]
+  (13) 
 val APPEND_EQ_NIL = Q.store_thm ("APPEND_EQ_NIL",
     `!l1 l2. ([] = l1 ++ l2) ==> ((l1 = []) /\ (l2 = [])) `,
       Cases_on `l2`
