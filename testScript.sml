@@ -9,7 +9,7 @@ open fracTheory
 open listLib 
 open satTheory 
 ;    
-  
+   
        
 val _ = new_theory "test" ; 
                               
@@ -203,7 +203,7 @@ val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
     
 *---------------------------------------------------*
                
-     
+      
 val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
    `!l  (t: (Cand # rat) list) c. (Legal_Tally_Cand l t c) ==> (legal_tally_cand l t c) `,                           
  
@@ -900,7 +900,7 @@ val no_dup_pile_def = Define `
 val NO_DUP_PILE = Define `
     NO_DUP_PILE (p: ((((Cand list) # rat) list) list)) x = (p = []) \/ (~ MEM x p) \/
                                                    (?l1 l2. (p = l1 ++ x::l2) /\ (~ MEM x l1) /\ (~ MEM x l2))`;  
- 
+  
 
  
 
@@ -937,7 +937,7 @@ val Logical_list_MEM_VICE_VERCA_TheFunctional = Q.store_thm("Logical_list_MEM_VI
       >- rw[list_MEM_def]
       >- (REPEAT STRIP_TAC 
         >> metis_tac[MEM,list_MEM_def]));  
-    
+     
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
     /\ Valid_Init_CandList l
@@ -988,7 +988,7 @@ val Elim_cand_dec_def = Define `
                /\ (MEM (c,[]) p')
                /\ (subpile1 c p p') /\ (subpile2 c p' p) )) `;
                         
-
+ 
 `!l1 l2 c. NO_DUP_PRED (l1++l2) c ==> (NO_DUP_PRED l1 c)`
 
 Induct_on `l1`
@@ -1020,35 +1020,39 @@ Induct_on `l1`
 
 
 
- 
-`!st qu l c j1 j2. elim_cand st qu l c j1 j2 ==> (Elim_cand_dec st qu l c (j1,j2))`
-
-rw[elim_cand_def,Elim_cand_dec_def]  
-EVAL_TAC  
-REPEAT STRIP_TAC
   
-   (1) rw[]   
-   (2) RW_TAC bool_ss []  
-   (3) (`l <> []` by metis_tac[Valid_Init_CandList] >>   
-       `?l1 x. l = x::l1` by metis_tac [list_nchotomy] >>
-       rw[non_empty])
-   (4) metis_tac [Valid_Init_CandList,NO_DUP_PRED_to_no_dup] 
-   (5) metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional]
-   (6) metis_tac 
+val Logical_elim_to_Functional_Elim = Q.store_thm ("Logical_elim_to_Functional_Elim",
+ `!st qu l c j1 j2. elim_cand st qu l c j1 j2 ==> (Elim_cand_dec st qu l c (j1,j2))`,
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+   (rw[elim_cand_def,Elim_cand_dec_def]   
+    >> EVAL_TAC   
+     >> REPEAT STRIP_TAC) 
+      >- rw[]    
+      >- RW_TAC bool_ss []   
+      >- (`l <> []` by metis_tac[Valid_Init_CandList] 
+         >> `?l1 x. l = x::l1` by metis_tac [list_nchotomy] 
+           >> rw[non_empty]) 
+      >- metis_tac [Valid_Init_CandList,NO_DUP_PRED_to_no_dup]  
+      >- metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional]
+      >- metis_tac [NO_DUP_PRED_to_no_dup] 
+      >- metis_tac [PileTally_to_PileTally_DEC1] 
+      >- metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]
+      >- metis_tac [PileTally_to_PileTally_DEC1]
+      >- metis_tac [PileTally_to_PileTally_DEC2,Valid_PileTally]  
+      >- metis_tac [NO_DUP_PRED_to_no_dup]
+      >- metis_tac [Valid_PileTally,PileTally_to_PileTally_DEC1]
+      >- metis_tac [Valid_PileTally,PileTally_to_PileTally_DEC2]
+      >- rw []
+      >- metis_tac [LogicalLessThanQu_IMP_less_than_quota,Valid_PileTally]
+      >- metis_tac [EQE_IMP_REMOVE_ONE_CAND]
+      >- (`MEM c (MAP FST t)` by metis_tac [Valid_PileTally,FST,MAP] 
+        >> `!d. MEM d h ==> MEM d (MAP FST t)` by metis_tac [Valid_PileTally] 
+         >> metis_tac [Logical_bigger_than_cand_IMP_TheFunctional])
+      >- rw[]
+      >- metis_tac [Logical_subpile1_IMP_TheFunctional]         
+      >- (`!d. (d = c) ==> ?l. MEM (c,l) p` by metis_tac[GET_CAND_PILE_MEM,Valid_PileTally]  
+          >> metis_tac [Logical_subpile2_IMP_TheFunctional])) 
+ 
 
 
 
