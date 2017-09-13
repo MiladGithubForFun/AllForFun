@@ -14,7 +14,7 @@ open relationTheory
      
        
 val _ = new_theory "test" ; 
-                                         
+                                          
 val _ = Hol_datatype ` Cand = cand of string ` ; 
     
 val _ = Hol_datatype `judgement =  
@@ -173,7 +173,7 @@ val GET_CAND_TALLY_MEM2 = Q.store_thm ("GET_CAND_TALLY_MEM",
         >- (EVAL_TAC 
           >> REPEAT STRIP_TAC >> rw []));
       
-           
+            
 *------------------------------------------*
 val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
  `!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) 
@@ -989,7 +989,7 @@ val Elim_cand_dec_def = Define `
                              
    
   
- 
+  
    
 val Logical_elim_to_Functional_Elim = Q.store_thm ("Logical_elim_to_Functional_Elim",
  `!st qu l c j1 j2. elim_cand st qu l c j1 j2 ==> (Elim_cand_dec st qu l c (j1,j2))`,
@@ -1038,7 +1038,7 @@ val empty_list_verified= Q.store_thm ("empty_list_verified",
 
  
 
-
+ 
 val Functional_Elim_to_Logical_elim = Q.store_thm ("Functional_Elim_to_Logical_elim",
  `!st qu l c j1 j2. Elim_cand_dec st qu l c (j1,j2) ==> elim_cand st qu l c j1 j2`,
    
@@ -1964,6 +1964,7 @@ val Elect_dec = Define `
               let (l1 = (take_append bl' bl))
                  in  
                    (SORTED (tally_comparison t) l1)
+                /\ (no_dup (l1 ++ e))
                 /\ (ba = []) /\ (ba' = [])
                 /\ (t = t')
                 /\ (non_empty l1)
@@ -1990,7 +1991,7 @@ val Elect_dec = Define `
                 /\ (list_MEM h l)
                 /\ (update_cand_pile qu t l1 p p'))`;
       
-
+ 
 
 val Logical_to_Functional_elect = Q.store_thm ("Logical_to_Functional_elect",
  `! st (qu: rat) l j1 j2. elect st qu l j1 j2 ==> Elect_dec st qu l (j1,j2)`,
@@ -1998,8 +1999,9 @@ val Logical_to_Functional_elect = Q.store_thm ("Logical_to_Functional_elect",
 (rw [elect,Elect_dec]
   >> EVAL_TAC  
    >> `take_append (bl ++ l1) bl = l1` by metis_tac [take_append,take_append_returns_appended]   
-    >> REPEAT STRIP_TAC) 
-       >- metis_tac []
+    >> REPEAT STRIP_TAC)  
+       >- metis_tac [] 
+       >- metis_tac [NO_DUP_PRED_to_no_dup] 
        >- (RW_TAC bool_ss [] 
          >> metis_tac [list_nchotomy,non_empty]) 
        >- (RW_TAC bool_ss [] 
@@ -2032,50 +2034,67 @@ val Logical_to_Functional_elect = Q.store_thm ("Logical_to_Functional_elect",
        >- (`(!c. MEM c l1 ==> MEM c (MAP FST np))` by metis_tac [MEM,Valid_PileTally]  
          >> `(!c. MEM c l ==> MEM c (MAP FST p))` by metis_tac [MEM,Valid_PileTally] 
            >> metis_tac [logical_to_functional_update_pile]));
-   
+    
+ 
  
 
+val Functional_to_Logical_elect = Q.store_thm ("Functional_to_Logical_elect",
+ `! st qu l j1 j2. Elect_dec st qu l (j1,j2) ==> elect st qu l j1 j2`,
 
+ (REPEAT STRIP_TAC
+  >> rw[elect] 
+    >> Cases_on `j1`) 
+   
+  >- (Cases_on `j2`
+    
+     >- ((Cases_on `p` >> Cases_on `r` >> Cases_on `r'` >> Cases_on `r` >> Cases_on `r'` 
+      >> Cases_on `p'` >> Cases_on `r'` >> Cases_on `r''` >> Cases_on `r'` >> Cases_on `r''`
+       >> rfs[Elect_dec]
+        >> MAP_EVERY qexists_tac [`take_append q'''''''' q'''`]
+          >> REPEAT STRIP_TAC)
+ 
+          >- metis_tac [non_empty] 
+          >- RW_TAC bool_ss [] 
+          >- metis_tac [functional_to_logical_BiggerThanQuota] 
+          >- rw [] 
+          >- metis_tac [eqe_list_dec_MEM1,MEM,no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [eqe_list_dec_MEM1,MEM,no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [eqe_list_dec2_verified,MEM]  
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED] 
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED] 
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED] 
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [eqe_list_dec_MEM1,MEM,no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [eqe_list_dec_MEM1,MEM,no_dup_IMP_NO_DUP_PRED]
+          >-  metis_tac [eqe_list_dec2_verified]
+          >- (`!c. MEM c r ==> MEM c l` by metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional]
+            >> `!c. MEM c r ==> MEM c (MAP FST q'')` 
+                by metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally,MEM] 
+              >> `!c. MEM c r ==> MEM c (MAP FST q''''''')` 
+                   by metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally,
+                    MEM,Logical_list_MEM_VICE_VERCA_TheFunctional]
+                >> metis_tac[Logical_list_MEM_VICE_VERCA_TheFunctional,functional_to_logicl_piles_eq
+                    ,no_dup_IMP_NO_DUP_PRED])  
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [functional_to_logical_update_pile,no_dup_IMP_NO_DUP_PRED]
+          >-  metis_tac [functional_to_logical_update_pile,no_dup_IMP_NO_DUP_PRED]
+          >- metis_tac [no_dup_IMP_NO_DUP_PRED,non_empty,Valid_Init_CandList]
+          >- metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally]
+          >-  metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally]
+          >- metis_tac [Valid_PileTally,PileTally_DEC1_to_PileTally,PileTally_DEC2_IMP_PileTally]
+          >- metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional]
+          >- metis_tac [Logical_list_MEM_VICE_VERCA_TheFunctional]
+          >- RW_TAC bool_ss [])
 
+     >- rfs [Elect_dec])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  >- (Cases_on `j2` 
+  
+   >- rfs [Elect_dec]
+   >- rfs [Elect_dec]));
+   
 
 
 
