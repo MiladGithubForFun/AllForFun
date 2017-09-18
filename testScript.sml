@@ -14,7 +14,7 @@ open relationTheory
      
        
 val _ = new_theory "test" ; 
-                                          
+                                              
 val _ = Hol_datatype ` Cand = cand of string ` ; 
     
 val _ = Hol_datatype `judgement =  
@@ -172,39 +172,7 @@ val GET_CAND_TALLY_MEM2 = Q.store_thm ("GET_CAND_TALLY_MEM",
         >- rw []
         >- (EVAL_TAC 
           >> REPEAT STRIP_TAC >> rw []));
-      
-            
-*------------------------------------------*
-val GET_CAND_TALLY_MEM_def = Q.store_thm ("GET_CAND_TALLY_MEM",
- `!(h: Cand # rat) t c. (MEM c (MAP FST (h::t))) 
-                                    ==> (MEM (c, get_cand_tally c (h::t)) (h::t)) `, 
-   Induct_on `t`      
-       >- (EVAL_TAC 
-         >> STRIP_TAC 
-          >> STRIP_TAC 
-           >> STRIP_TAC 
-            >> rw[])       
-       >- ((ASSUME_TAC CAND_EQ_DEC 
-        >> REPEAT STRIP_TAC 
-         >> first_assum (qspecl_then [`c`,`FST h'`] strip_assume_tac))   
-           >- (rw[] 
-            >> EVAL_TAC 
-              >> DISJ1_TAC >> ASM_SIMP_TAC bool_ss [PAIR])        
-           >- ((ASSUME_TAC MEM 
-            >> ASSUME_TAC (INST_TYPE [alpha|-> ``:(Cand # rat)``,beta|-> ``:Cand``] MAP)
-              >> first_assum (strip_assume_tac) 
-               >> first_x_assum (qspecl_then [`FST`,`h'`,`h::t`] strip_assume_tac) 
-                >> first_x_assum (qspecl_then [`h`,`c`] strip_assume_tac) 
-                 >> RW_TAC bool_ss [] 
-                  >> FULL_SIMP_TAC list_ss [])
-                    >- (DISJ2_TAC 
-                      >> DISJ1_TAC 
-                        >> EVAL_TAC 
-                         >> rw[])     
-                    >- (DISJ2_TAC 
-                      >> RW_TAC bool_ss [GET_CAND_TALLY_HEAD_REMOVAL_def]))));
-    
-*---------------------------------------------------*
+       
                    
        
 val Legal_to_legal_tally_cand = Q.store_thm("Legal_to_legal_tally_cand",
@@ -989,7 +957,7 @@ val Elim_cand_dec_def = Define `
                              
    
   
-  
+   
    
 val Logical_elim_to_Functional_Elim = Q.store_thm ("Logical_elim_to_Functional_Elim",
  `!st qu l c j1 j2. elim_cand st qu l c j1 j2 ==> (Elim_cand_dec st qu l c (j1,j2))`,
@@ -1026,14 +994,14 @@ val Logical_elim_to_Functional_Elim = Q.store_thm ("Logical_elim_to_Functional_E
       >- (`!d. (d = c) ==> ?l. MEM (c,l) p` by metis_tac[GET_CAND_PILE_MEM,Valid_PileTally]  
           >> metis_tac [Logical_subpile2_IMP_TheFunctional])); 
   
-     
+      
 val empty_list_verified= Q.store_thm ("empty_list_verified",
  `!l. empty_list l ==> (l = [])`,
 
    Induct_on `l`
      >- rw[]  
      >- metis_tac[empty_list_def]);
-    
+      
   
 
  
@@ -1503,7 +1471,7 @@ Induct_on `l`
  
 
 val intermediate_count_IMP_Count_Aux = Q.store_thm ("intermediate_count_IMP_Count_Aux",
- `! (st: int) (qu: rat) l j1 j2. intermediate_count st qu l j1 j2 ==> Count_Aux st qu l j1 j2`,
+ `! (st: num) (qu: rat) l j1 j2. intermediate_count st qu l j1 j2 ==> Count_Aux st qu l j1 j2`,
  
 
 (REPEAT STRIP_TAC 
@@ -1535,10 +1503,10 @@ val intermediate_count_IMP_Count_Aux = Q.store_thm ("intermediate_count_IMP_Coun
                  metis_tac [Valid_PileTally,PileTally_DEC2_IMP_PileTally,GET_CAND_TALLY_MEM2]) 
                >> metis_tac [])));       
      
- 
+  
   
 val Count_Aux_IMP_intermediate_count = Q.store_thm ("Count_Aux_IMP_intermediate_count",
-`! (st: int) (qu: rat) l j1 j2. Count_Aux st qu l j1 j2 ==> intermediate_count st qu l j1 j2`,
+`! (st: num) (qu: rat) l j1 j2. Count_Aux st qu l j1 j2 ==> intermediate_count st qu l j1 j2`,
 
 (REPEAT STRIP_TAC
  >> rw[intermediate_count] 
@@ -1558,14 +1526,14 @@ val Count_Aux_IMP_intermediate_count = Q.store_thm ("Count_Aux_IMP_intermediate_
          >> metis_tac [Valid_PileTally,PileTally_DEC2_IMP_PileTally,EVERY_CAND_HAS_ONE_PILE])
      >- (`(!r. MEM c l /\ MEM (c,r) t <=> MEM c l /\ MEM (c,r) nt) ` by metis_tac []
       >> metis_tac [Valid_PileTally,PileTally_DEC2_IMP_PileTally,EVERY_CAND_HAS_ONE_TALLY,GET_CAND_TALLY_MEM2])));
-     
+      
   
 
 
 
 
 val Count_Aux_IMP_Count_Aux_dec = Q.store_thm ("Count_Aux_IMP_Count_Aux_dec",
- `! (st: int) (qu: rat) l j1 j2. Count_Aux st qu l j1 j2 ==> Count_Aux_dec st qu l (j1,j2)`,
+ `! (st: num) (qu: rat) l j1 j2. Count_Aux st qu l j1 j2 ==> Count_Aux_dec st qu l (j1,j2)`,
   
   (ASSUME_TAC Count_Aux_IMP_intermediate_count
    >> REPEAT STRIP_TAC 
@@ -1594,11 +1562,11 @@ val Count_Aux_IMP_Count_Aux_dec = Q.store_thm ("Count_Aux_IMP_Count_Aux_dec",
         >- metis_tac [NO_DUP_PRED_to_no_dup]
         >- (`? X BA. ba = X::BA` by metis_tac [list_nchotomy] >> rw[non_empty]) 
         >- (`? h0 hs. h = h0::hs` by metis_tac [list_nchotomy] >> rw[non_empty]));
-  
+   
   
  
 val Count_Aux_dec_IMP_Count_Aux = Q.store_thm ("Count_Aux_dec_IMP_Count_Aux",
- `! (st : int) (qu:rat) l j1 j2. Count_Aux_dec st qu l (j1,j2) ==> Count_Aux st qu l j1 j2 `,
+ `! (st : num) (qu:rat) l j1 j2. Count_Aux_dec st qu l (j1,j2) ==> Count_Aux st qu l j1 j2 `,
  
  (ASSUME_TAC intermediate_count_IMP_Count_Aux   
   >> REPEAT STRIP_TAC  
@@ -1635,8 +1603,8 @@ val Count_Aux_dec_IMP_Count_Aux = Q.store_thm ("Count_Aux_dec_IMP_Count_Aux",
          >- rfs [Count_Aux_dec]
          >- rfs [Count_Aux_dec]))) 
            >> metis_tac[]);   
-   
- 
+    
+  
 
 val APPEND_EQ_NIL2 = Q.store_thm ("APPEND_EQ_NIL2",
     `!l1 l2. ([] = l1 ++ l2) ==> ((l1 = []) /\ (l2 = [])) `,
@@ -2094,7 +2062,297 @@ val Functional_to_Logical_elect = Q.store_thm ("Functional_to_Logical_elect",
   
    >- rfs [Elect_dec]
    >- rfs [Elect_dec]));
+ 
+     
+val all_elem_zero = Define `
+            (all_elem_zero ([]: rat list) = T)
+         /\ (all_elem_zero (t0::ts) = (t0 = rat_0) /\ (all_elem_zero ts))`;
+  
+ 
+val all_elem_nil = Define `
+            (all_elem_nil ([]: (((Cand list) # rat) list) list) = T)
+         /\ (all_elem_nil (p0::ps) = (p0 = []) /\ (all_elem_nil ps))`;
+  
+
+
+ 
+val All_elem_zero_verified = Q.store_thm ("All_elem_zero_verified",
+ `! t. (!c. MEM c t ==> (c = rat_0)) <=> all_elem_zero t`,
+
+  Induct_on `t`
+     >- rw[all_elem_zero]
+     >- (REPEAT STRIP_TAC 
+       >> metis_tac [all_elem_zero,MEM])); 
+
+
+val All_elem_nil_verified = Q.store_thm ("All_elem_nil_verified",
+ `! p. (!c. MEM c p ==> (c = [])) <=> all_elem_nil p`,
+
+  Induct_on `p`
+   >- rw[all_elem_nil]
+   >- (REPEAT STRIP_TAC
+     >> metis_tac [MEM,all_elem_nil]));
+  
+ 
+  
+val Initial_Judgement_dec = Define `
+        (Initial_Judgement_dec (l: Cand list) (winners w) = F)
+     /\ (Initial_Judgement_dec l (state (ba, t, p, bl, e, h)) = 
+                                (all_elem_zero (MAP SND t))
+                             /\ (bl = [])
+                             /\ (e = [])
+                             /\ (h = l)
+                             /\ (all_elem_nil (MAP SND p)))`;
+  
+  
+val initial_judgement = Define `
+          (initial_judgement (l: Cand list) j = ? ba t p bl e h.
+                                               (j = state (ba, t, p, bl, e, h))
+                                            /\ (!c. MEM c (MAP SND t) ==> (c = rat_0))
+                                                /\ (!c. MEM c (MAP SND p) ==> (c = []))
+                                                /\ (bl = [])
+                                                /\ (e = [])
+                                                /\ (h = l))`;
+
+
+val Initial_Judgement_IMP_TheLogical = Q.store_thm ("Initial_Judgement_IMP_TheLogical",
+ `! l j. Initial_Judgement_dec l j ==> initial_judgement l j`,
+
+  (REPEAT STRIP_TAC >> rw[initial_judgement] 
+    >> Cases_on `j`) 
+
+     >- (Cases_on `p` >> Cases_on `r` >> Cases_on `r'` >> Cases_on `r` >> Cases_on `r'`
+      >> rfs [Initial_Judgement_dec]
+        >> metis_tac [All_elem_zero_verified,All_elem_nil_verified])
+     >- rfs[Initial_Judgement_dec]);
+  
+
+val Logical_to_Functional_Initial_Judgement = Q.store_thm ("Logical_to_Functional_Initial_Judgement",
+ `! l j. initial_judgement l j ==> Initial_Judgement_dec l j`,
+
+  (REPEAT STRIP_TAC
+    >> rfs [initial_judgement]  
+      >> rw[Initial_Judgement_dec])  
+         >- metis_tac [All_elem_zero_verified] 
+         >- metis_tac [All_elem_nil_verified]);
+
+
+ 
+val Final_Judgement_dec = Define `
+           (Final_Judgement_dec (state (ba,t,p,bl,e,h)) = F)
+        /\ (Final_Judgement_dec (winners l) = T)`;
+ 
+
+
+val Elim_dec = Define `
+         (Elim_dec st qu l (j1,j2) c = Elim_cand_dec st qu l c (j1,j2))`;  
+
+ 
    
+val Checker_Aux_dec = Define `
+          (Checker_Aux_dec st qu l ([] : judgement list) = F)
+       /\ (Checker_Aux_dec st qu l (j0::js) = 
+              if (empty_list js) 
+                          then  (Final_Judgement_dec j0)
+              else if (empty_list (TL js))
+                        then (Hwin qu st (j0,HD js) \/ Ewin qu st (j0,HD js))
+                   else  ((Count_Aux_dec st qu l (j0,HD js))
+                      \/ (Transfer_dec st qu l (j0,HD js))
+                      \/ (Elect_dec st qu l (j0,HD js))
+                      \/ (EXISTS (Elim_dec st qu l (j0,HD js)) l)) 
+                      /\ (Checker_Aux_dec st qu l js))`;                
+  
+   
+val final_judgement = Define `
+              (final_judgement j = (! ba t p bl e h. (j <> state (ba,t,p,bl,e,h))) 
+                                /\ (? (w : Cand list). (j = winners w)))`;
+
+     
+ 
+ 
+val Checker_Aux2_dec = Define `
+             (Checker_Aux2_dec st qu l ([]:judgement list) = F)
+          /\ (Checker_Aux2_dec st qu l [j0] = Final_Judgement_dec j0)
+          /\ (Checker_Aux2_dec st qu l (j0::j1::js) = 
+               ((Hwin qu st (j0,j1) 
+            \/ (Ewin qu st (j0,j1))
+            \/ (Count_Aux_dec st qu l (j0,j1))
+            \/ (Transfer_dec st qu l (j0,j1))
+            \/ (Elect_dec st qu l (j0,j1))
+            \/ (EXISTS (Elim_dec st qu l (j0,j1)) l)) 
+            /\ (Checker_Aux2_dec st qu l (j1::js))))`;  
+ 
+
+ 
+ 
+
+
+
+
+val checker_aux2_def =  Define `
+           (checker_aux2 st qu l J = (J <> [] )
+                                  /\ (final_judgement (LAST J)) 
+                                  /\ (! J0 J1 j0 j1. (J = J0 ++ [j0;j1]++ J1) ==>
+                                      ((hwin qu st j0 j1)
+                                   \/ (ewin qu st j0 j1) 
+                                   \/ (Count_Aux st qu l j0 j1)
+                                   \/ (transfer st qu l j0 j1)
+                                   \/ (elect st qu l j0 j1)
+                                   \/ (? (c: Cand). MEM c l /\ elim_cand st qu l c j0 j1))))`; 
+   
+ 
+
+`! st qu l J. checker_aux2 st qu l J ==> Checker_Aux2_dec st qu l J` 
+    
+Induct_on `J`
+         
+ rw [checker_aux2_def]
+      
+ REPEAT STRIP_TAC
+ `(J = []) \/ (J <> [])` by metis_tac [list_nchotomy]
+     
+     (rfs[Checker_Aux2_dec,checker_aux2_def]
+     FULL_SIMP_TAC list_ss [LAST_DEF]     
+     metis_tac [final_judgement,Final_Judgement_dec])
+     
+     `? j' J'. (J = j'::J')` by metis_tac[list_nchotomy]
+     RW_TAC bool_ss [] 
+     rw[Checker_Aux2_dec] 
+     
+        ((rfs[checker_aux2_def]
+        first_assum (qspecl_then [`[]`,`J'`,`h`,`j'`] strip_assume_tac)
+        `h::j'::J' = [] ++ [h;j'] ++ J'` by EVAL_TAC
+        ` (hwin qu st h j')
+        \/ (ewin qu st h j')
+        \/ (Count_Aux st qu l h j')
+        \/ (transfer st qu l h j')
+        \/ (elect st qu l h j')
+        \/ (? c. MEM c l /\ elim_cand st qu l c h j')` by metis_tac [])   
+      
+          (6)  metis_tac [hwin_to_Hwin]  
+          (5) metis_tac [ewin_to_Ewin_thm]     
+          (4) metis_tac [Count_Aux_IMP_Count_Aux_dec]  
+          (3) metis_tac [Logical_transfer_to_Functional_Transfer]  
+          (2) metis_tac [Logical_to_Functional_elect]    
+          (1) ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] MEM_SPLIT) >> 
+                    first_x_assum (qspecl_then [`c`,`l`] strip_assume_tac) >>
+                    `? l1 l2. l = l1 ++ c:: l2` by metis_tac []                     
+                    RW_TAC bool_ss [Elim_dec] >> REPEAT DISJ2_TAC >>
+                     rw [EXISTS_DEF] >> DISJ2_TAC >> DISJ1_TAC >>
+                      metis_tac [Elim_dec,Logical_elim_to_Functional_Elim])
+               
+  
+    (rfs[checker_aux2_def]
+    first_assum (qspecl_then [`st`,`qu`,`l`] strip_assume_tac)
+    `! J0 J1 j0 j1. (j'::J' = J0 ++ [j0;j1] ++ J1) ==>  (hwin qu st j0 j1)
+                                                     \/ (ewin qu st j0 j1)
+                                                     \/ (Count_Aux st qu l j0 j1)
+                                                     \/ (transfer st qu l j0 j1)
+                                                     \/ (elect st qu l j0 j1)
+                                                     \/ (? c. MEM c l /\ elim_cand st qu l c j0 j1)`
+      by  (REPEAT STRIP_TAC                    
+          first_assum (qspecl_then [`h::J0`,`J1`,`j0`,`j1`] strip_assume_tac)
+          `h::j'::J' = h::J0 ++ [j0;j1] ++J1` by FULL_SIMP_TAC list_ss[]
+          metis_tac [])   
+      metis_tac [])     
+                       
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+                                                            
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+val Checker_dec = Define `
+        (Checker_dec st qu l (J : judgement list) =
+           (Initial_Judgement_dec l (HD J)) /\ (Checker_aux_dec st qu l J))`;                                     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
