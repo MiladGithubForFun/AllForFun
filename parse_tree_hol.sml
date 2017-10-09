@@ -1,7 +1,9 @@
 open HolKernel bossLib boolLib pairLib integerTheory listTheory Parse boolSimps
-open stringLib pairTheory numLib numTheory ratTheory bossLib fracTheory 
-open listLib satTheory sortingTheory  relationTheory
-  
+open pairTheory numLib numTheory ratTheory fracTheory 
+open listLib satTheory relationTheory 
+open mlstringTheory
+
+
 (* Make it char for the moment and change it later to string after 
    discussing with Milad about how to change char into string *)
 val _ = Hol_datatype ` Cand = cand of char ` ; 
@@ -40,7 +42,7 @@ EVAL_TAC
 
 
 
-(* start of first part *)
+(*
 fun cand_list st =
   let val lst = String.explode st
       fn t_cand_list tlst = 
@@ -53,8 +55,24 @@ fun cand_list st =
            | (x :: t) => (cand x) :: t_cand_list t
   in t_cand_list lst
   end
-           
-           
+ *)
+
+type_of ``FLAT``
+val process_chunk_def = Define`
+proces_chunk tlst acc lst = 
+  case  (tlst, acc, lst) of
+      ([], acc, lst) => lst 
+    | ((#"[" :: t), acc, lst) => process_chunk t (CONCAT [acc,  "["]) lst
+    | ((#"(" :: t), acc, lst) => process_chunk t (CONCAT [acc, "("]) lst
+    | ((#")" :: #"," :: t), acc, lst) => 
+      process_chunk t "" 
+                    (FLAT [lst, [CONCAT [acc, ")"]]])
+    | ((#")" :: t), acc, lst) => 
+      process_chunk t "" 
+                    (FLAT [lst, [CONCAT [acc, ")"]]]) 
+    | ((x :: t), acc, lst)  => process_chunk t (CONCAT [acc, (STR x)]) lst`
+
+
 val split_it_into_pair = 
  fn str => 
     let val ltm = String.explode str 
