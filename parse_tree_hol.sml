@@ -1,17 +1,10 @@
 open HolKernel bossLib boolLib pairLib integerTheory listTheory Parse boolSimps
-open stringLib  
-open pairTheory  
-open numLib
-open numTheory
-open ratTheory
-open bossLib
-open fracTheory 
-open listLib 
-open satTheory
-open sortingTheory  
-open relationTheory
- 
-val _ = Hol_datatype ` Cand = cand of string ` ; 
+open stringLib pairTheory numLib numTheory ratTheory bossLib fracTheory 
+open listLib satTheory sortingTheory  relationTheory
+  
+(* Make it char for the moment and change it later to string after 
+   discussing with Milad about how to change char into string *)
+val _ = Hol_datatype ` Cand = cand of char ` ; 
 
 val _ = Hol_datatype `judgement =  
                                       state   of 
@@ -22,21 +15,44 @@ val _ = Hol_datatype `judgement =
                                              # Cand list
                                              # Cand list 
                        | winners of (Cand list) `; 
+ 
+(* start of first part *)
+val t_cand_list_def = Define`
+t_cand_list tlst = 
+       case tlst of 
+           [] => []
+         | (#"," :: t) => t_cand_list t
+         | (#"[" :: t) => t_cand_list t
+         | (#"]" :: t) => t_cand_list t
+         | (#" " :: t) => t_cand_list t
+         | (x :: t) => (cand x) :: t_cand_list t`   
+
+`t_cand_list ( [#"["; #"A"; #","; #"B"; #","; #"C"; #"]"] ) = [ cand (#"A"); cand (#"B"); cand (#"C") ]`
+EVAL_TAC
+
+val cand_list_def = Define`
+cand_list st = 
+  let lst = EXPLODE st in 
+  t_cand_list lst` 
+
+`cand_list "[A,B,C]" = [ cand (#"A"); cand (#"B"); cand (#"C") ]`
+EVAL_TAC
+
+
 
 (* start of first part *)
-val cand_list =
- fn str =>
-       let val lst = String.explode str
-           fun t_cand_list tlst = 
-             case tlst of 
-                 [] => []
-               | (#"," :: t) => t_cand_list t
-               | (#"[" :: t) => t_cand_list t
-               | (#"]" :: t) => t_cand_list t
-               | (#" " :: t) => t_cand_list t
-               | (x :: t) => Cand (String.str x) :: t_cand_list t
-       in t_cand_list lst 
-       end 
+fun cand_list st =
+  let val lst = String.explode st
+      fn t_cand_list tlst = 
+         case tlst of 
+             [] => []
+           | (#"," :: t) => t_cand_list t
+           | (#"[" :: t) => t_cand_list t
+           | (#"]" :: t) => t_cand_list t
+           | (#" " :: t) => t_cand_list t
+           | (x :: t) => (cand x) :: t_cand_list t
+  in t_cand_list lst
+  end
            
            
 val split_it_into_pair = 
@@ -104,7 +120,7 @@ val parse_rational = fn str =>
       val first = List.hd tlst
       val st = String.explode (List.hd (List.tl tlst))
       val second = String.implode (List.filter isDigit st) 
-  in (parse_number first, parse_number second)
+  in Rationals.Rat (parse_number first, parse_number second)
   end
 
 (* lets plug the values togather for first part*)
