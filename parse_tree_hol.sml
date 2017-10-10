@@ -4,6 +4,7 @@ open listLib satTheory relationTheory
 open stringLib 
 open stringTheory
 
+(* replace (int # int) with real *)
 val _ = Hol_datatype ` Cand = cand of string ` ; 
 
 val _ = Hol_datatype `judgement =  
@@ -122,7 +123,7 @@ EVAL ``parse_rational "123%345)"``
 (* lets plug the values togather for first part*)
 
 val parse_first_part_def = Define`
-parse_first_part str = 
+parse_first_part str =
  let l1 = split_it_into_pair str in 
  let l2 = MAP (\x. parse_pair x) l1 in 
  let l3 = MAP (\(x, y). (cand_list x, parse_rational y)) l2 in
@@ -146,11 +147,12 @@ parse_second_part str =
  let strs = TOKENS (\x. x = #" ") str in
  MAP parse_second_t strs`
 
-
+ 
 EVAL ``parse_second_part " A{5%6} B{2%3} C{3%4}"``
                                            
 (* parse_third_part *)
             
+
 val parse_third_t_def = Define`
 parse_third_t tstr = 
  let tlst = TOKENS (\x. x = #"{") tstr in 
@@ -172,4 +174,32 @@ val parse_rest_def = Define`
 parse_rest str = cand_list str`
                
 EVAL ``parse_rest "[A,B,C]"``                
- (* combine all to parse one line *)
+
+(* combine all to parse one line *)
+
+val parse_whole_line_def = Define`
+parse_whole_line str = 
+  let semi = TOKENS (\x. x = #";") str in 
+  let (f, r1) = (HD semi, TL semi) in
+  let (s, r2) = (HD r1, TL r1) in
+  let (t, r3) = (HD r2, TL r2) in
+  let (fr, r4) = (HD r3, TL r3) in
+  let (fi, r5) = (HD r4, TL r4) in
+  let sx = HD r5 in
+  state (parse_first_part f, parse_second_part s, 
+   parse_third_part t, parse_rest fr,
+   parse_rest fi, parse_rest sx)`
+
+(* end of parsing one line *)
+
+EVAL ``parse_whole_line "[([A,B,C],1%1),([C,B,A],1%1),([B,A,C],1%1),([C,A,B],1%1),([A,B,C],1%1),([A,B,C],1%1),([C,B,A],1%1),([A,C,B],1%1),([B,C,A],1%1),([A,B,C],1%1)]; A{0%1} B{0%1} C{0%1}; A{[]} B{[]} C{[]}; []; []; [A,B,C]"``
+
+EVAL ``parse_whole_line "[]; A{5%1} B{2%1} C{3%1}; A{[([A,B,C],1%1),([A,B,C],1%1),([A,B,C],1%1),([A,C,B],1%1),([A,B,C],1%1)]} B{[([B,A,C],1%1),([B,C,A],1%1)]} C{[([C,B,A],1%1),([C,A,B],1%1),([C,B,A],1%1)]}; []; []; [A,B,C]"``
+
+EVAL ``parse_whole_line "[]; A{5%1} B{2%1} C{3%1}; A{[([A,B,C],0%1),([A,B,C],0%1),([A,B,C],0%1),([A,C,B],0%1),([A,B,C],0%1)]} B{[([B,A,C],1%1),([B,C,A],1%1)]} C{[([C,B,A],1%1),([C,A,B],1%1),([C,B,A],1%1)]}; [A]; [A]; [B,C]"``
+
+open realTheory
+open realLib
+open string_numTheory
+
+EVAL ``real_of_num 4 / real_of_num 5``
