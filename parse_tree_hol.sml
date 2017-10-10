@@ -4,9 +4,7 @@ open listLib satTheory relationTheory
 open stringLib 
 open stringTheory
 
-(* Make it char for the moment and change it later to string after 
-   discussing with Milad about how to change char into string *)
-val _ = Hol_datatype ` Cand = cand of char ` ; 
+val _ = Hol_datatype ` Cand = cand of string ` ; 
 
 val _ = Hol_datatype `judgement =  
                                       state   of 
@@ -27,9 +25,9 @@ t_cand_list tlst =
          | (#"[" :: t) => t_cand_list t
          | (#"]" :: t) => t_cand_list t
          | (#" " :: t) => t_cand_list t
-         | (x :: t) => (cand x) :: t_cand_list t`   
+         | (x :: t) => (cand (STR x)) :: t_cand_list t`   
 
-`t_cand_list ( [#"["; #"A"; #","; #"B"; #","; #"C"; #"]"] ) = [ cand (#"A"); cand (#"B"); cand (#"C") ]`
+`t_cand_list ( [#"["; #"A"; #","; #"B"; #","; #"C"; #"]"] ) = [ cand "A"; cand "B"; cand "C"]`
 EVAL_TAC
 
 val cand_list_def = Define`
@@ -37,44 +35,9 @@ cand_list st =
   let lst = EXPLODE st in 
   t_cand_list lst` 
 
-`cand_list "[A,B,C]" = [ cand (#"A"); cand (#"B"); cand (#"C") ]`
-EVAL_TAC
+`cand_list "[A,B,C]" = [cand "A"; cand "B"; cand "C"]`
+EVAL_TAC 
 
-
-
-(*
-fun cand_list st =
-  let val lst = String.explode st
-      fn t_cand_list tlst = 
-         case tlst of 
-             [] => []
-           | (#"," :: t) => t_cand_list t
-           | (#"[" :: t) => t_cand_list t
-           | (#"]" :: t) => t_cand_list t
-           | (#" " :: t) => t_cand_list t
-           | (x :: t) => (cand x) :: t_cand_list t
-  in t_cand_list lst
-  end
- *)
-(*
-val read_string_def = tDefine "read_string" `
-read_string str s loc =
-  if str = "" then (ErrorS, loc, "") else
-  if HD str = #"\"" then (StringS s, loc with col := loc.col, TL str) else
-  if HD str = #"\n" then (ErrorS, loc with <|row := loc.row + 1; col := 0|>, TL str) else
-  if HD str <> #"\\" then
-      read_string (TL str) (s ++ [HD str]) (loc with col := loc.col + 1)
-  else
-      case TL str of
-        | #"\\"::cs => read_string cs (s ++ "\\") (loc with col := loc.col + 2)
-        | #"\""::cs => read_string cs (s ++ "\"") (loc with col := loc.col + 2)
-        | #"n"::cs => read_string cs (s ++ "\n") (loc with <|row := loc.row + 1;
-                                                  col := 0|>)
-        | #"t"::cs => read_string cs (s ++ "\t") (loc with col := loc.col + 2)
-        | _ => (ErrorS, loc, TL str)`
-
-(WF_REL_TAC `measure (LENGTH o FST)` THEN REPEAT STRIP_TAC
-            THEN Cases_on `str` THEN FULL_SIMP_TAC (srw_ss()) [] THEN DECIDE_TAC) *)
 
 val process_chunk_def = tDefine "process_chunk" `
 process_chunk tlst acc lst= 
@@ -102,24 +65,7 @@ split_it_into_pair st =
  
 
 EVAL ``split_it_into_pair "[([A,B,C],1.0),([C,B,A],1.0),([B,A,C],1.0),([C,A,B],1.0),([A,B,C],1.0),([A,B,C],1.0),([C,B,A],1.0),([A,C,B],1.0),([B,C,A],1.0),([A,B,C],3.0)]"``
-(*
-val split_it_into_pair = 
- fn str => 
-    let val ltm = String.explode str 
-        fun process_chunk tlst acc lst = 
-          case  (tlst, acc, lst) of
-              ([], acc, lst) => lst 
-            | ((#"[" :: t), acc, lst) => process_chunk t (String.concat [acc,  "["]) lst
-            | ((#"(" :: t), acc, lst) => process_chunk t (String.concat [acc, "("]) lst
-            | ((#")" :: #"," :: t), acc, lst) => 
-              process_chunk t "" 
-                            (List.concat [lst, [String.concat [acc, ")"]]])
-            | ((#")" :: t), acc, lst) => 
-              process_chunk t "" 
-                            (List.concat [lst, [String.concat [acc, ")"]]]) 
-            | ((x :: t), acc, lst)  => process_chunk t (String.concat [acc, (String.str x)]) lst
-    in process_chunk (List.tl ltm) "" []
-    end  *)
+
 
 val parse_pair_t_def = tDefine "parse_pair_t" `
 parse_pair_t ts (ac, bc) = 
@@ -147,22 +93,6 @@ parse_pair str =
 
 EVAL``parse_pair "([A,B,C],1.0)"``
 
-(*
-val parse_pair = 
- fn str => 
-    let val tm = String.explode str 
-        fun parse_t ts (ac, bc) = 
-          case (ts, (ac, bc)) of
-              ([], (ac, bc)) => (ac, bc)
-            | ((#"(" :: t), (ac, bc)) => parse_t t (ac, bc)
-            | ((#")" :: t), (ac, bc)) => parse_t t (ac, bc)
-            | ((#"]" :: #"," :: t), (ac, bc)) => 
-              (String.concat [ac, "]"], String.implode t)
-            | ((x :: t), (ac, bc)) => 
-              parse_t t (String.concat [ac, String.str x], bc)   
-    in parse_t tm ("", "") 
-    end *)
-
         
 val parse_number_t_def = Define`
 parse_number_t lst acc = 
@@ -177,18 +107,6 @@ parse_number str =
     parse_number_t nlst 0`
 
 EVAL ``parse_number "12345"`` 
-
-(* "123" -> 123 *)
-(*
-val parse_number = 
- fn str => 
-    let val nlst = String.explode str
-        fun t_parse_number lst acc = 
-          case lst of 
-              [] => acc
-            | h :: t => t_parse_number t (10 * acc + (Char.ord h - Char.ord #"0"))
-    in t_parse_number nlst 0
-    end *)
         
 val parse_rational_def = Define`
 parse_rational str =
@@ -200,32 +118,6 @@ parse_rational str =
 
 EVAL ``parse_rational "123%345)"``
 
-(*
-type_of ``fn x => x = 2``
-val isDigit = 
- fn c => 
-    case c of 
-        #"0" => true 
-      | #"1" => true
-      | #"2" => true
-      | #"3" => true
-      | #"4" => true
-      | #"5" => true
-      | #"6" => true
-      | #"7" => true
-      | #"8" => true
-      | #"9" => true       
-      | _ => false  
-                              
-
-(* "a%b)" => (a, b) *)
-val parse_rational = fn str => 
-  let val tlst = String.tokens (fn x => x = #"%") str 
-      val first = List.hd tlst
-      val st = String.explode (List.hd (List.tl tlst))
-      val second = String.implode (List.filter isDigit st) 
-  in Rationals.Rat (parse_number first, parse_number second)
-  end *)
 
 (* lets plug the values togather for first part*)
 
@@ -238,56 +130,46 @@ parse_first_part str =
 
 EVAL `` parse_first_part "[([A,B,C],1%2),([C,B,A],1%2),([B,A,C],1%2),([C,A,B],1%2),([A,B,C],1%2),([A,B,C],1%2),([C,B,A],1%2),([A,C,B],1%2),([B,C,A],1%2),([A,B,C],3%4)]"``
 
-(*                                                                                                  
-val parse_first_part =
- fn str =>
-    let val l1 = split_it_into_pair str
-        val l2 = List.map (fn x => parse_pair x) l1
-        val l3 = List.map (fn (a, b) => (cand_list a, (parse_rational b))) l2
-    in l3
-    end
-        
-val first_final_part = parse_first_part "[([A,B,C],1%2),([C,B,A],1%2),([B,A,C],1%2),([C,A,B],1%2),([A,B,C],1%2),([A,B,C],1%2),([C,B,A],1%2),([A,C,B],1%2),([B,C,A],1%2),([A,B,C],3%4)]"
-*)
-
 (* End of first part. *)
 
 (* start of second part *)
 
-val parse_second_part =
-    fn str =>
-       let val strs = String.tokens (fn x => x = #" ") str
-           fun parse_t tstr = 
-             let val lstr = String.tokens (fn x => x = #"{") tstr
-                 val first = List.hd lstr
-                 val lrest = List.hd (List.tl lstr)
-             in (Cand first, parse_rational lrest)
-             end
-       in List.map parse_t strs
-       end
+val parse_second_t_def = Define`
+parse_second_t tstr = 
+  let lstr = TOKENS (\x. x = #"{") tstr in 
+  let first = HD lstr in 
+  let lrest = HD (TL lstr) in
+  (cand first, parse_rational lrest)`
 
-val second_final_test =  parse_second_part " A{5%6} B{2%3} C{3%4}"
+val parse_second_part_def = Define`
+parse_second_part str = 
+ let strs = TOKENS (\x. x = #" ") str in
+ MAP parse_second_t strs`
+
+
+EVAL ``parse_second_part " A{5%6} B{2%3} C{3%4}"``
                                            
 (* parse_third_part *)
-                                           
-val parse_third_part =
-    fn str =>
-       let val strs = String.tokens (fn x => x = #" ") str
-           fun t_parse tstr =
-             let val tlst = String.tokens (fn x => x = #"{") tstr
-                 val first = List.hd tlst
-                 val second = List.hd (List.tl tlst)
-             in (Cand first, parse_first_part second)
-             end
-       in List.map t_parse strs
-       end
+            
+val parse_third_t_def = Define`
+parse_third_t tstr = 
+ let tlst = TOKENS (\x. x = #"{") tstr in 
+ let first = HD tlst in 
+ let second = HD (TL tlst) in
+ (cand first, parse_first_part second)`
+    
+val parse_third_part_def = Define`
+parse_third_part str = 
+  let strs = TOKENS (\x. x = #" ") str in
+  MAP parse_third_t strs`
            
-val third_string_s = parse_third_part " A{[([A,B,C],1%2),([A,B,C],1%2),([A,B,C],1%2),([A,C,B],1%2),([A,B,C],1%3)]} B{[([B,A,C],1%40),([B,C,A],1%2)]} C{[([C,B,A],1%2),([C,A,B],1%5),([C,B,A],15%16)]}"
+EVAL ``parse_third_part " A{[([A,B,C],1%2),([A,B,C],1%2),([A,B,C],1%2),([A,C,B],1%2),([A,B,C],1%3)]} B{[([B,A,C],1%40),([B,C,A],1%2)]} C{[([C,B,A],1%2),([C,A,B],1%5),([C,B,A],15%16)]}"``
                                       
 (* end of third part *)
                                       
 (* parse rest part, third, fourth and final *)
-val parse_rest = 
-    fn str => cand_list str 
-                               
+val parse_rest_def = Define`
+parse_rest str = cand_list str`
+               
+EVAL ``parse_rest "[A,B,C]"``                
  (* combine all to parse one line *)
