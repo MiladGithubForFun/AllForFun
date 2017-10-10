@@ -1,8 +1,8 @@
 open HolKernel bossLib boolLib pairLib integerTheory listTheory Parse boolSimps
 open pairTheory numLib numTheory ratTheory fracTheory 
 open listLib satTheory relationTheory 
-open mlstringTheory
-
+open stringLib 
+open stringTheory 
 
 (* Make it char for the moment and change it later to string after 
    discussing with Milad about how to change char into string *)
@@ -56,23 +56,53 @@ fun cand_list st =
   in t_cand_list lst
   end
  *)
+(*
+val read_string_def = tDefine "read_string" `
+read_string str s loc =
+  if str = "" then (ErrorS, loc, "") else
+  if HD str = #"\"" then (StringS s, loc with col := loc.col, TL str) else
+  if HD str = #"\n" then (ErrorS, loc with <|row := loc.row + 1; col := 0|>, TL str) else
+  if HD str <> #"\\" then
+      read_string (TL str) (s ++ [HD str]) (loc with col := loc.col + 1)
+  else
+      case TL str of
+        | #"\\"::cs => read_string cs (s ++ "\\") (loc with col := loc.col + 2)
+        | #"\""::cs => read_string cs (s ++ "\"") (loc with col := loc.col + 2)
+        | #"n"::cs => read_string cs (s ++ "\n") (loc with <|row := loc.row + 1;
+                                                  col := 0|>)
+        | #"t"::cs => read_string cs (s ++ "\t") (loc with col := loc.col + 2)
+        | _ => (ErrorS, loc, TL str)`
 
-type_of ``FLAT``
-val process_chunk_def = Define`
-proces_chunk tlst acc lst = 
-  case  (tlst, acc, lst) of
-      ([], acc, lst) => lst 
-    | ((#"[" :: t), acc, lst) => process_chunk t (CONCAT [acc,  "["]) lst
-    | ((#"(" :: t), acc, lst) => process_chunk t (CONCAT [acc, "("]) lst
-    | ((#")" :: #"," :: t), acc, lst) => 
+(WF_REL_TAC `measure (LENGTH o FST)` THEN REPEAT STRIP_TAC
+            THEN Cases_on `str` THEN FULL_SIMP_TAC (srw_ss()) [] THEN DECIDE_TAC) *)
+
+val process_chunk_def = tDefine "process_chunk" `
+process_chunk tlst acc lst= 
+  case  tlst of
+      [] => lst 
+    | (#")" :: #"," :: t) => 
       process_chunk t "" 
-                    (FLAT [lst, [CONCAT [acc, ")"]]])
-    | ((#")" :: t), acc, lst) => 
+                    (FLAT [lst; [CONCAT [acc; ")"]]])
+    | (#")" :: t) => 
       process_chunk t "" 
-                    (FLAT [lst, [CONCAT [acc, ")"]]]) 
-    | ((x :: t), acc, lst)  => process_chunk t (CONCAT [acc, (STR x)]) lst`
+                    (FLAT [lst; [CONCAT [acc; ")"]]])
+    | (x :: t)  => process_chunk t (CONCAT [acc; (STR x)]) lst`
+((WF_REL_TAC `measure (LENGTH o FST )` >>   
+REPEAT STRIP_TAC ) 
+  >- FULL_SIMP_TAC list_ss []
+  >- FULL_SIMP_TAC list_ss [] 
+  >- FULL_SIMP_TAC list_ss [] 
+  >- FULL_SIMP_TAC list_ss []) 
 
 
+val split_it_into_pair_def = Define`
+split_it_into_pair st = 
+    let lst = EXPLODE st in
+    process_chunk (TL lst) "" []`
+ 
+
+EVAL ``split_it_into_pair "[([A,B,C],1.0),([C,B,A],1.0),([B,A,C],1.0),([C,A,B],1.0),([A,B,C],1.0),([A,B,C],1.0),([C,B,A],1.0),([A,C,B],1.0),([B,C,A],1.0),([A,B,C],3.0)]"``
+(*
 val split_it_into_pair = 
  fn str => 
     let val ltm = String.explode str 
@@ -89,7 +119,26 @@ val split_it_into_pair =
                             (List.concat [lst, [String.concat [acc, ")"]]]) 
             | ((x :: t), acc, lst)  => process_chunk t (String.concat [acc, (String.str x)]) lst
     in process_chunk (List.tl ltm) "" []
-    end 
+    end  *)
+
+val parse_pair_t_def = tDefine "parse_pair_t" `
+parse_pair_t ts (ac, bc) = 
+    case ts of
+        [] => (ac, bc)
+      | (#"(" :: t) => parse_pair_t t (ac, bc)
+      | (#")" :: t) => parse_pair_t t (ac, bc)
+      | (#"]" :: #"," :: t) => 
+        (CONCAT [ac; "]"], IMPLODE t)
+      | (x :: t) => 
+        parse_pair_t t (CONCAT [ac; STR x], bc)`
+((WF_REL_TAC `measure (LENGTH o FST)` >>
+             REPEAT STRIP_TAC)
+     >- FULL_SIMP_TAC list_ss []
+     >- FULL_SIMP_TAC list_ss []
+     >- FULL_SIMP_TAC list_ss []
+     >- FULL_SIMP_TAC list_ss []
+     >- FULL_SIMP_TAC list_ss [])
+
 
 val parse_pair = 
  fn str => 
