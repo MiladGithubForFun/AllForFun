@@ -229,19 +229,28 @@ val parse_rational = fn str =>
 
 (* lets plug the values togather for first part*)
 
+val parse_first_part_def = Define`
+parse_first_part str = 
+ let l1 = split_it_into_pair str in 
+ let l2 = MAP (\x. parse_pair x) l1 in 
+ let l3 = MAP (\(x, y). (cand_list x, parse_rational y)) l2 in
+ l3`
 
+EVAL `` parse_first_part "[([A,B,C],1%2),([C,B,A],1%2),([B,A,C],1%2),([C,A,B],1%2),([A,B,C],1%2),([A,B,C],1%2),([C,B,A],1%2),([A,C,B],1%2),([B,C,A],1%2),([A,B,C],3%4)]"``
+
+(*                                                                                                  
 val parse_first_part =
  fn str =>
     let val l1 = split_it_into_pair str
         val l2 = List.map (fn x => parse_pair x) l1
-        val l3 = List.map (fn (a, b) => (cand_list a, parse_rational b)) l2
+        val l3 = List.map (fn (a, b) => (cand_list a, (parse_rational b))) l2
     in l3
     end
         
 val first_final_part = parse_first_part "[([A,B,C],1%2),([C,B,A],1%2),([B,A,C],1%2),([C,A,B],1%2),([A,B,C],1%2),([A,B,C],1%2),([C,B,A],1%2),([A,C,B],1%2),([B,C,A],1%2),([A,B,C],3%4)]"
+*)
 
-
-(* End of first part. Cakeml is getting on my nurves *)
+(* End of first part. *)
 
 (* start of second part *)
 
