@@ -2,7 +2,7 @@ open HolKernel bossLib boolLib pairLib integerTheory listTheory Parse boolSimps
 open pairTheory numLib numTheory ratTheory fracTheory 
 open listLib satTheory relationTheory 
 open stringLib 
-open stringTheory 
+open stringTheory
 
 (* Make it char for the moment and change it later to string after 
    discussing with Milad about how to change char into string *)
@@ -190,6 +190,18 @@ val parse_number =
     in t_parse_number nlst 0
     end *)
         
+val parse_rational_def = Define`
+parse_rational str =
+    let tlst = TOKENS (\x. x = #"%") str in
+    let first = HD tlst in 
+    let st = EXPLODE (HD (TL tlst)) in 
+    let second = IMPLODE (FILTER isDigit st) in 
+    (parse_number first, parse_number second)`
+
+EVAL ``parse_rational "123%345)"``
+
+(*
+type_of ``fn x => x = 2``
 val isDigit = 
  fn c => 
     case c of 
@@ -205,6 +217,7 @@ val isDigit =
       | #"9" => true       
       | _ => false  
                               
+
 (* "a%b)" => (a, b) *)
 val parse_rational = fn str => 
   let val tlst = String.tokens (fn x => x = #"%") str 
@@ -212,9 +225,10 @@ val parse_rational = fn str =>
       val st = String.explode (List.hd (List.tl tlst))
       val second = String.implode (List.filter isDigit st) 
   in Rationals.Rat (parse_number first, parse_number second)
-  end
+  end *)
 
 (* lets plug the values togather for first part*)
+
 
 val parse_first_part =
  fn str =>
