@@ -140,6 +140,14 @@ parse_pair_t ts (ac, bc) =
      >- FULL_SIMP_TAC list_ss [])
 
 
+val parse_pair_def = Define`
+parse_pair str = 
+        let tm = EXPLODE str in 
+        parse_pair_t tm ("", "")`
+
+EVAL``parse_pair "([A,B,C],1.0)"``
+
+(*
 val parse_pair = 
  fn str => 
     let val tm = String.explode str 
@@ -153,9 +161,25 @@ val parse_pair =
             | ((x :: t), (ac, bc)) => 
               parse_t t (String.concat [ac, String.str x], bc)   
     in parse_t tm ("", "") 
-    end 
+    end *)
+
         
+val parse_number_t_def = Define`
+parse_number_t lst acc = 
+     case lst of 
+         [] => acc
+       | h :: t => parse_number_t t (10 * acc + (ORD h - ORD #"0"))`
+
+
+val parse_number_def = Define`
+parse_number str = 
+    let nlst = EXPLODE str in
+    parse_number_t nlst 0`
+
+EVAL ``parse_number "12345"`` 
+
 (* "123" -> 123 *)
+(*
 val parse_number = 
  fn str => 
     let val nlst = String.explode str
@@ -164,7 +188,7 @@ val parse_number =
               [] => acc
             | h :: t => t_parse_number t (10 * acc + (Char.ord h - Char.ord #"0"))
     in t_parse_number nlst 0
-    end
+    end *)
         
 val isDigit = 
  fn c => 
