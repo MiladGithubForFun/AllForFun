@@ -4,18 +4,23 @@ open listLib satTheory relationTheory
 open stringLib 
 open stringTheory
 
+
+val _ = new_theory "myparser"
+ 
 (* replace (int # int) with real *)
 val _ = Hol_datatype ` Cand = cand of string ` ; 
 
 val _ = Hol_datatype `judgement =  
                                       state   of 
-                         ((Cand list) # (int # int)) list
-                                             # (Cand # (int # int)) list
-                                             # (Cand # (((Cand list) # (int # int)) list)) list
+                         ((Cand list) # (num # num)) list
+                                             # (Cand # (num # num)) list
+                                             # (Cand # (((Cand list) # (num # num)) list)) list
                                              # Cand list 
                                              # Cand list
                                              # Cand list 
                        | winners of (Cand list) `; 
+  
+  
  
 (* start of first part *)
 val t_cand_list_def = Define`
@@ -27,17 +32,17 @@ t_cand_list tlst =
          | (#"]" :: t) => t_cand_list t
          | (#" " :: t) => t_cand_list t
          | (x :: t) => (cand (STR x)) :: t_cand_list t`   
-
-`t_cand_list ( [#"["; #"A"; #","; #"B"; #","; #"C"; #"]"] ) = [ cand "A"; cand "B"; cand "C"]`
-EVAL_TAC
-
+   
+(*
+EVAL ``t_cand_list ( [#"["; #"A"; #","; #"B"; #","; #"C"; #"]"] )``
+*)
+ 
 val cand_list_def = Define`
 cand_list st = 
   let lst = EXPLODE st in 
   t_cand_list lst` 
-
-`cand_list "[A,B,C]" = [cand "A"; cand "B"; cand "C"]`
-EVAL_TAC 
+   
+ 
 
 
 val process_chunk_def = tDefine "process_chunk" `
@@ -57,16 +62,17 @@ REPEAT STRIP_TAC )
   >- FULL_SIMP_TAC list_ss [] 
   >- FULL_SIMP_TAC list_ss [] 
   >- FULL_SIMP_TAC list_ss []) 
-
-
+  
+ 
 val split_it_into_pair_def = Define`
 split_it_into_pair st = 
     let lst = EXPLODE st in
     process_chunk (TL lst) "" []`
- 
+   
 
+(*
 EVAL ``split_it_into_pair "[([A,B,C],1.0),([C,B,A],1.0),([B,A,C],1.0),([C,A,B],1.0),([A,B,C],1.0),([A,B,C],1.0),([C,B,A],1.0),([A,C,B],1.0),([B,C,A],1.0),([A,B,C],3.0)]"``
-
+*)
 
 val parse_pair_t_def = tDefine "parse_pair_t" `
 parse_pair_t ts (ac, bc) = 
@@ -85,14 +91,13 @@ parse_pair_t ts (ac, bc) =
      >- FULL_SIMP_TAC list_ss []
      >- FULL_SIMP_TAC list_ss []
      >- FULL_SIMP_TAC list_ss [])
-
-
+ 
+ 
 val parse_pair_def = Define`
 parse_pair str = 
         let tm = EXPLODE str in 
         parse_pair_t tm ("", "")`
-
-EVAL``parse_pair "([A,B,C],1.0)"``
+  
 
         
 val parse_number_t_def = Define`
@@ -100,15 +105,14 @@ parse_number_t lst acc =
      case lst of 
          [] => acc
        | h :: t => parse_number_t t (10 * acc + (ORD h - ORD #"0"))`
-
+  
 
 val parse_number_def = Define`
 parse_number str = 
     let nlst = EXPLODE str in
     parse_number_t nlst 0`
-
-EVAL ``parse_number "12345"`` 
-        
+ 
+         
 val parse_rational_def = Define`
 parse_rational str =
     let tlst = TOKENS (\x. x = #"%") str in
@@ -116,11 +120,11 @@ parse_rational str =
     let st = EXPLODE (HD (TL tlst)) in 
     let second = IMPLODE (FILTER isDigit st) in 
     (parse_number first, parse_number second)`
-
-EVAL ``parse_rational "123%345)"``
+  
 
 
 (* lets plug the values togather for first part*)
+(*the following takes lists of ballots and parses them*)
 
 val parse_first_part_def = Define`
 parse_first_part str =
@@ -129,7 +133,9 @@ parse_first_part str =
  let l3 = MAP (\(x, y). (cand_list x, parse_rational y)) l2 in
  l3`
 
+(*  
 EVAL `` parse_first_part "[([A,B,C],1%2),([C,B,A],1%2),([B,A,C],1%2),([C,A,B],1%2),([A,B,C],1%2),([A,B,C],1%2),([C,B,A],1%2),([A,C,B],1%2),([B,C,A],1%2),([A,B,C],3%4)]"``
+*)
 
 (* End of first part. *)
 
@@ -141,14 +147,18 @@ parse_second_t tstr =
   let first = HD lstr in 
   let lrest = HD (TL lstr) in
   (cand first, parse_rational lrest)`
+  
+(*the following takes a pair of cands and their votes and parses them*)
 
 val parse_second_part_def = Define`
 parse_second_part str = 
  let strs = TOKENS (\x. x = #" ") str in
  MAP parse_second_t strs`
+  
 
- 
+(* 
 EVAL ``parse_second_part " A{5%6} B{2%3} C{3%4}"``
+*)
                                            
 (* parse_third_part *)
             
@@ -159,21 +169,25 @@ parse_third_t tstr =
  let first = HD tlst in 
  let second = HD (TL tlst) in
  (cand first, parse_first_part second)`
-    
+   
+(*the following takes a lists of pairs of cands with their piles*)
+   
 val parse_third_part_def = Define`
 parse_third_part str = 
   let strs = TOKENS (\x. x = #" ") str in
   MAP parse_third_t strs`
-           
+
+(*             
 EVAL ``parse_third_part " A{[([A,B,C],1%2),([A,B,C],1%2),([A,B,C],1%2),([A,C,B],1%2),([A,B,C],1%3)]} B{[([B,A,C],1%40),([B,C,A],1%2)]} C{[([C,B,A],1%2),([C,A,B],1%5),([C,B,A],15%16)]}"``
+*)
                                       
 (* end of third part *)
                                       
 (* parse rest part, third, fourth and final *)
 val parse_rest_def = Define`
 parse_rest str = cand_list str`
-               
-EVAL ``parse_rest "[A,B,C]"``                
+                 
+                
 
 (* combine all to parse one line *)
 
@@ -189,17 +203,12 @@ parse_whole_line str =
   state (parse_first_part f, parse_second_part s, 
    parse_third_part t, parse_rest fr,
    parse_rest fi, parse_rest sx)`
-
+  
 (* end of parsing one line *)
 
+(*
 EVAL ``parse_whole_line "[([A,B,C],1%1),([C,B,A],1%1),([B,A,C],1%1),([C,A,B],1%1),([A,B,C],1%1),([A,B,C],1%1),([C,B,A],1%1),([A,C,B],1%1),([B,C,A],1%1),([A,B,C],1%1)]; A{0%1} B{0%1} C{0%1}; A{[]} B{[]} C{[]}; []; []; [A,B,C]"``
+*)
 
-EVAL ``parse_whole_line "[]; A{5%1} B{2%1} C{3%1}; A{[([A,B,C],1%1),([A,B,C],1%1),([A,B,C],1%1),([A,C,B],1%1),([A,B,C],1%1)]} B{[([B,A,C],1%1),([B,C,A],1%1)]} C{[([C,B,A],1%1),([C,A,B],1%1),([C,B,A],1%1)]}; []; []; [A,B,C]"``
 
-EVAL ``parse_whole_line "[]; A{5%1} B{2%1} C{3%1}; A{[([A,B,C],0%1),([A,B,C],0%1),([A,B,C],0%1),([A,C,B],0%1),([A,B,C],0%1)]} B{[([B,A,C],1%1),([B,C,A],1%1)]} C{[([C,B,A],1%1),([C,A,B],1%1),([C,B,A],1%1)]}; [A]; [A]; [B,C]"``
-
-open realTheory
-open realLib
-open string_numTheory
-
-EVAL ``real_of_num 4 / real_of_num 5``
+val _ = export_theory ()
