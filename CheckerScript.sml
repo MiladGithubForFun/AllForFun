@@ -39,11 +39,6 @@ val Ewin_def = Define `
         /\ (Ewin qu st (state (ba, t, p, bl, e, h), winners l) =  
                        ( (e =l) /\ (LENGTH e = st)))`;
           
-val ewin_def = Define ` ewin (qu: rat) st j1 j2 = ? u t p bl e h w.
-               (j1 = state (u, t, p, bl, e, h))                 
-               /\ (j2 = winners w) 
-               /\ (e = w)
-               /\ ((LENGTH e) = st)`;
         
 val Hwin_def = Define `
         (Hwin (qu : rat) st (winners l, (j : judgement)) = F) 
@@ -52,12 +47,6 @@ val Hwin_def = Define `
             ((e ++ h) = l) /\ ((LENGTH (e ++ h)) <= st))`; 
  
  
-val eqe_def = Define `
-       ((eqe (c: Cand) l nl ) = ?l1 l2. 
-                                 (l = l1 ++ l2)
-                                 /\ (nl = l1 ++ [c] ++ l2)
-                                 /\ (~ (MEM c l1)) 
-                                 /\ (~ (MEM c l2))) `;
    
 val get_cand_tally_def = Define `
            (get_cand_tally (c: Cand) (h ::t) = (if  (c = FST h) then SND h
