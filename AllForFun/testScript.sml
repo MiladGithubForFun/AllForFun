@@ -12,9 +12,9 @@ open sortingTheory
 open relationTheory
 ;    
      
-        
+       
 val _ = new_theory "test" ; 
-                                               
+                                              
 val _ = Hol_datatype ` Cand = cand of string ` ; 
     
 val _ = Hol_datatype `judgement =  
@@ -32,7 +32,7 @@ val sum_aux_def = Define ` ((sum_aux []) = 0) /\
                   
   
     
-(*The boolian function for deciding on ewin correct application*)    
+(*the boolian function for deciding on ewin correct application*)    
 val Ewin_def = Define `
         (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
         /\ (Ewin qu st (state p, state p') = F)                
@@ -904,8 +904,6 @@ val Logical_list_MEM_VICE_VERCA_TheFunctional = Q.store_thm("Logical_list_MEM_VI
       >- rw[list_MEM_def]
       >- (REPEAT STRIP_TAC 
         >> metis_tac[MEM,list_MEM_def]));  
-
-
      
 val elim_cand_def = Define ` (elim_cand st (qu :rat) (l : Cand list) (c: Cand) j1 j2) = (?t p e h nh nba np.
     (j1 = state ([], t, p, [], e, h))
@@ -2202,158 +2200,6 @@ val checker_aux2_def =  Define `
                                    \/ (elect st qu l j0 j1)
                                    \/ (? (c: Cand). MEM c l /\ elim_cand st qu l c j0 j1))))`; 
    
-
-
-
-val Logical_to_computational_checker= Q.store_thm("Logical_to_computatonal_checker",
- `! st qu l J. checker_aux2 st qu l J ==> Checker_Aux2_dec st qu l J`, 
-     
-  Induct_on `J`
-    >- rw [checker_aux2_def]
-    >- ((REPEAT STRIP_TAC >>
-        `(J = []) \/ (J <> [])` by metis_tac [list_nchotomy])
-           >- (rfs[Checker_Aux2_dec,checker_aux2_def]
-            >> FULL_SIMP_TAC list_ss [LAST_DEF]     
-             >> metis_tac [final_judgement,Final_Judgement_dec])
-           >- ((`? j' J'. (J = j'::J')` by metis_tac[list_nchotomy] 
-                 >> RW_TAC bool_ss [] 
-                  >> rw[Checker_Aux2_dec]) 
-            >- ((rfs[checker_aux2_def]  
-             >> first_assum (qspecl_then [`[]`,`J'`,`h`,`j'`] strip_assume_tac) 
-              >> `h::j'::J' = [] ++ [h;j'] ++ J'` by EVAL_TAC 
-               >> `  (hwin qu st h j')
-                 \/ (ewin qu st h j')
-                 \/ (Count_Aux st qu l h j')
-                 \/ (transfer st qu l h j')
-                 \/ (elect st qu l h j')
-                 \/ (? c. MEM c l /\ elim_cand st qu l c h j')` by metis_tac [])   
-                   >- metis_tac [hwin_to_Hwin]   
-                   >- metis_tac [ewin_to_Ewin_thm]      
-                   >- metis_tac [Count_Aux_IMP_Count_Aux_dec]   
-                   >- metis_tac [Logical_transfer_to_Functional_Transfer]   
-                   >- metis_tac [Logical_to_Functional_elect]     
-                   >- (ASSUME_TAC (INST_TYPE [alpha |-> ``:Cand``] MEM_SPLIT) 
-                     >> first_x_assum (qspecl_then [`c`,`l`] strip_assume_tac) 
-                       >> `? l1 l2. l = l1 ++ c:: l2` by metis_tac [] 
-                        >> RW_TAC bool_ss [Elim_dec] >> REPEAT DISJ2_TAC 
-                          >> rw [EXISTS_DEF] 
-                           >> DISJ2_TAC >> DISJ1_TAC 
-                            >> metis_tac [Elim_dec,Logical_elim_to_Functional_Elim]))
-                  
-  
-             >- (rfs[checker_aux2_def] 
-              >> first_assum (qspecl_then [`st`,`qu`,`l`] strip_assume_tac) 
-               >> `! J0 J1 j0 j1. (j'::J' = J0 ++ [j0;j1] ++ J1) ==>  (hwin qu st j0 j1)
-                                                     \/ (ewin qu st j0 j1)
-                                                     \/ (Count_Aux st qu l j0 j1)
-                                                     \/ (transfer st qu l j0 j1)
-                                                     \/ (elect st qu l j0 j1)
-                                                     \/ (? c. MEM c l /\ elim_cand st qu l c j0 j1)`
-                  by  (REPEAT STRIP_TAC 
-                  >> first_assum (qspecl_then [`h::J0`,`J1`,`j0`,`j1`] strip_assume_tac) 
-                   >> `h::j'::J' = h::J0 ++ [j0;j1] ++J1` by FULL_SIMP_TAC list_ss[] 
-                     >> metis_tac [])   
-                       >> metis_tac []))));     
-                         
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-                                                            
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-val Checker_dec = Define `
-        (Checker_dec st qu l (J : judgement list) =
-           (Initial_Judgement_dec l (HD J)) /\ (Checker_aux_dec st qu l J))`;                                     
-
-
-
-
-
-
-
-
-
-
-
-
-
-val elim_cand2 = Define `
-          (elim_cand2 st qu l c (j: judgement, winners w) = F) /\
-          (elim_cand2 st qu l c (winners w, j: judgement) = F) /\
-          (elim_cand2 st qu l c (state (ba,t,p,bl,e,h), state (nba,nt,np,nbl,ne,nh)) =
-                 Valid_Init_CandList l
-              /\ (t = nt) /\ (e = ne)
-              /\ (!c'. MEM c' (h++e) ==> (MEM c' l))
-              /\ (!c'. NO_DUP_PRED (h++e) c')
-              /\ (Valid_PileTally p l)   
-              /\ (Valid_PileTally np l)
-              /\ (LENGTH (e ++ h) > st) 
-              /\ (LENGTH e < st)
-              /\ (!c'. NO_DUP_PRED (MAP FST t) c')
-              /\ (Valid_PileTally t l)
-              /\ (!c'. (MEM c' h ==> (?x. MEM (c',x) t /\ ( x < qu))))  
-              /\ (MEM c h) 
-              /\ (!d. (MEM d h ==> (?x y. (MEM (c,x) t) /\ (MEM (d,y) t) /\ ( x <= y))))
-              /\ (eqe c nh h)
-              /\ (nba = get_cand_pile c p)
-              /\ (MEM (c,[]) np)
-              /\ (!d'. ((d' <> c) ==> (!l. (MEM (d',l) p ==> MEM (d',l) np) 
-                              /\ (MEM (d',l) np ==> MEM (d',l) p)))))`;
-
-
-
  
 
 val _ = export_theory();
-
-
