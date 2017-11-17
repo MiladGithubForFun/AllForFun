@@ -13,7 +13,7 @@ open relationTheory
 ;    
      
        
-val _ = new_theory "test" ; 
+val _ = new_theory "Checker" ; 
                                               
 val _ = Hol_datatype ` Cand = cand of string ` ; 
     
