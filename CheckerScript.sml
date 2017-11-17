@@ -32,7 +32,7 @@ val sum_aux_def = Define ` ((sum_aux []) = 0) /\
                   
   
     
-(*the boolian function for deciding on ewin correct application*)    
+(*The boolian function for deciding on ewin correct application*)    
 val Ewin_def = Define `
         (Ewin (qu : rat) st ((winners l), (j : judgement)) = F) 
         /\ (Ewin qu st (state p, state p') = F)                
